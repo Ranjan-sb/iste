@@ -174,7 +174,7 @@ const ISTELandingPage = () => {
                                 variant="ghost"
                                 className="text-gray-600 hover:text-gray-900"
                             >
-                                Sign In
+                                Sign-In
                             </Button>
                             <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
                                 Get Started
