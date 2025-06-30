@@ -6,21 +6,19 @@ import { userProfiles, roles } from '@/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { getUserSession } from '@/server/auth/server';
 
-// Create tRPC context (add shared context values here)
-export function createContext() {
-    return {};
+export function createContext(opts: { req?: Request }) {
+    return {
+        req: opts.req,
+    };
 }
 export type Context = ReturnType<typeof createContext>;
 
-// Initialize tRPC
 const t = initTRPC.context<Context>().create({
     transformer: superjson,
 });
 
 export const router = t.router;
 export const publicProcedure = t.procedure;
-
-// Zod schemas for input/output
 const ProfileInput = z.object({
     fullName: z.string().min(1),
     contact: z.string().optional(),
@@ -29,22 +27,29 @@ const ProfileInput = z.object({
 });
 
 const ProfileUpdateInput = ProfileInput.partial().extend({ id: z.number() });
-
-// tRPC router for profile management
 export const profileRouter = router({
     getProfile: publicProcedure.query(async ({ ctx }) => {
-        const session = await getUserSession();
-        if (!session?.user) throw new Error('Unauthorized');
+        const headers = ctx.req ? new Headers(ctx.req.headers) : new Headers();
+        const session = await getUserSession(headers);
+
+        if (!session?.user) {
+            throw new Error('Unauthorized');
+        }
+
         const [profile] = await db
             .select()
             .from(userProfiles)
             .where(eq(userProfiles.userId, session.user.id));
-        return profile;
+
+        return profile || null;
     }),
     updateProfile: publicProcedure
         .input(ProfileUpdateInput)
         .mutation(async ({ input, ctx }) => {
-            const session = await getUserSession();
+            const headers = ctx.req
+                ? new Headers(ctx.req.headers)
+                : new Headers();
+            const session = await getUserSession(headers);
             if (!session?.user) throw new Error('Unauthorized');
             await db
                 .update(userProfiles)
@@ -55,7 +60,10 @@ export const profileRouter = router({
     createProfile: publicProcedure
         .input(ProfileInput)
         .mutation(async ({ input, ctx }) => {
-            const session = await getUserSession();
+            const headers = ctx.req
+                ? new Headers(ctx.req.headers)
+                : new Headers();
+            const session = await getUserSession(headers);
             if (!session?.user) throw new Error('Unauthorized');
             const [profile] = await db
                 .insert(userProfiles)
@@ -73,11 +81,8 @@ export const profileRouter = router({
     }),
 });
 
-// App router with example hello procedure
 export const appRouter = router({
     hello: publicProcedure.query(() => 'Hello world'),
     profile: profileRouter,
 });
-
-// Export API type
 export type AppRouter = typeof appRouter;

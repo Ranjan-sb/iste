@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import isteLogo from '@/logos/pngs/ISTE.png';
+import Navbar from '@/components/navigation/navbar';
 import {
     Award,
     Users,
@@ -153,36 +153,8 @@ const ISTELandingPage = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-            {/* Header */}
-            <header className="sticky top-0 z-50 bg-white/80 shadow-sm backdrop-blur-sm dark:bg-gray-900/80">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex h-16 items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white">
-                                <img
-                                    src={isteLogo.src}
-                                    alt="ISTE Logo"
-                                    className="h-8 w-8 object-contain"
-                                />
-                            </div>
-                            <span className="text-xl font-bold text-gray-900 dark:text-white">
-                                ISTE Platform
-                            </span>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                            <Button
-                                variant="ghost"
-                                className="text-gray-600 hover:text-gray-900"
-                            >
-                                Sign-In
-                            </Button>
-                            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                                Get Started
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </header>
+            {/* Navigation */}
+            <Navbar variant="landing" />
 
             {/* Hero Section */}
             <section className="px-4 py-20 sm:px-6 lg:px-8">
@@ -247,7 +219,7 @@ const ISTELandingPage = () => {
             </section>
 
             {/* User Types Section */}
-            <section className="px-4 py-20 sm:px-6 lg:px-8">
+            <section id="features" className="px-4 py-20 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-7xl">
                     <div className="mb-16 text-center">
                         <h2 className="mb-4 text-4xl font-bold text-gray-900 dark:text-white">
@@ -335,7 +307,7 @@ const ISTELandingPage = () => {
             </section>
 
             {/* Award Categories Section */}
-            <section className="px-4 py-20 sm:px-6 lg:px-8">
+            <section id="awards" className="px-4 py-20 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-7xl">
                     <div className="mb-16 text-center">
                         <h2 className="mb-4 text-4xl font-bold text-gray-900 dark:text-white">
@@ -476,7 +448,10 @@ const ISTELandingPage = () => {
             </section>
 
             {/* Footer */}
-            <footer className="bg-gray-900 px-4 py-12 text-white sm:px-6 lg:px-8">
+            <footer
+                id="about"
+                className="bg-gray-900 px-4 py-12 text-white sm:px-6 lg:px-8"
+            >
                 <div className="mx-auto max-w-7xl">
                     <div className="grid gap-8 md:grid-cols-4">
                         <div>
@@ -500,7 +475,7 @@ const ISTELandingPage = () => {
                             <ul className="space-y-2 text-gray-400">
                                 <li>
                                     <a
-                                        href="#"
+                                        href="#features"
                                         className="transition-colors hover:text-white"
                                     >
                                         Features
@@ -508,7 +483,7 @@ const ISTELandingPage = () => {
                                 </li>
                                 <li>
                                     <a
-                                        href="#"
+                                        href="#awards"
                                         className="transition-colors hover:text-white"
                                     >
                                         Awards

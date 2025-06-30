@@ -16,6 +16,8 @@ To maintain consistency and quality throughout the project lifecycle, all team m
     - All client components MUST be placed in appropriate directories under `src/app/`
     - Shared utilities MUST go in `src/lib/`
     - Context providers MUST be in `src/providers/`
+    - Reusable UI components MUST be in `src/components/`
+    - Navigation components MUST be in `src/components/navigation/`
 
 2. **Naming Conventions**:
 
@@ -101,6 +103,9 @@ The project combines the following technologies:
 - **TypeScript** - Full type safety across the entire application
 - **ESLint & Prettier** - Code quality and formatting enforced via pre-commit hooks
 - **pnpm** - Fast, disk space efficient package manager (required for this project)
+- **shadcn/ui** - Modern, accessible component library built on Radix UI
+- **React Hook Form** - Performant forms with easy validation
+- **Zod** - TypeScript-first schema validation
 
 ## Project Structure
 
@@ -111,9 +116,30 @@ rstart/
 │   │   ├── api/
 │   │   │   ├── auth/        # Auth API endpoints
 │   │   │   └── trpc/        # tRPC API handler
+│   │   ├── auth/            # Authentication pages
+│   │   │   ├── login/       # Login page
+│   │   │   └── register/    # Registration page
+│   │   ├── dashboard/       # Dashboard pages
 │   │   ├── layout.tsx       # Root layout with providers
 │   │   ├── page.tsx         # Home page
 │   │   └── globals.css      # Global styles
+│   ├── components/          # Reusable UI components
+│   │   ├── ui/              # shadcn/ui components
+│   │   │   ├── button.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── form.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── label.tsx
+│   │   │   ├── select.tsx
+│   │   │   ├── separator.tsx
+│   │   │   ├── table.tsx
+│   │   │   ├── tabs.tsx
+│   │   │   ├── textarea.tsx
+│   │   │   ├── dialog.tsx
+│   │   │   ├── sheet.tsx
+│   │   │   └── badge.tsx
+│   │   └── navigation/      # Navigation components
+│   │       └── navbar.tsx   # Main navigation bar
 │   ├── lib/                 # Utility functions and shared code
 │   ├── providers/           # React context providers
 │   │   ├── theme-provider.tsx  # Theme management
@@ -257,6 +283,75 @@ export function AuthComponent() {
 }
 ```
 
+### 4. Navigation System
+
+The project includes a flexible navigation system with the `Navbar` component that adapts based on the current context.
+
+#### Navigation Component
+
+The main navigation component is located at `src/components/navigation/navbar.tsx`:
+
+```typescript
+import Navbar from '@/components/navigation/navbar';
+
+// For landing pages
+<Navbar variant="landing" />
+
+// For dashboard pages
+<Navbar variant="dashboard" />
+```
+
+#### Features
+
+- **Responsive Design**: Mobile-first approach with hamburger menu
+- **Authentication State**: Automatically shows different options based on login status
+- **Role-based Display**: Shows user role badge in dashboard mode
+- **Smooth Navigation**: Proper routing with Next.js Link components
+
+### 5. Form Handling with React Hook Form
+
+The project uses React Hook Form with Zod validation for type-safe form handling.
+
+#### Form Setup
+
+```typescript
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+
+const formSchema = z.object({
+    email: z.string().email('Invalid email'),
+    password: z.string().min(8, 'Password too short'),
+});
+
+export function MyForm() {
+    const form = useForm<z.infer<typeof formSchema>>({
+        resolver: zodResolver(formSchema),
+    });
+
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+                <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                                <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </form>
+        </Form>
+    );
+}
+```
+
 ## Best Practices
 
 ### Adding New Features
@@ -336,11 +431,30 @@ const protectedRouter = router({
 });
 ```
 
+#### 4. Adding New shadcn/ui Components
+
+1. Install new components using the shadcn CLI:
+
+```bash
+npx shadcn@latest add [component-name]
+```
+
+2. Use the component in your code:
+
+```typescript
+import { ComponentName } from '@/components/ui/component-name';
+
+export function MyComponent() {
+    return <ComponentName />;
+}
+```
+
 ### Project Organization
 
 1. **Component Structure**:
 
-    - Reusable UI components go in `src/components/`
+    - Reusable UI components go in `src/components/ui/`
+    - Navigation components go in `src/components/navigation/`
     - Page-specific components should live within their page directory
 
 2. **Server Logic**:
