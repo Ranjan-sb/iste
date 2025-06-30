@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: 'rstart',
+    title: 'ISTE',
     description:
         'Modern full-stack boilerplate with Next.js, tRPC, Drizzle, and better-auth',
 };

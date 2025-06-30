@@ -14,6 +14,7 @@
         "db:auth:generate": "pnpm dlx @better-auth/cli generate --output src/server/db/auth-schema.ts -y"
     },
     "dependencies": {
+        "@radix-ui/react-slot": "^1.2.3",
         "@tanstack/react-query": "^5.74.3",
         "@trpc/client": "^11.1.0",
         "@trpc/react-query": "^11.1.0",
