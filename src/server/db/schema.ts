@@ -39,7 +39,7 @@ export const userProfiles = pgTable('user_profiles', {
     fullName: text('full_name').notNull(),
     contact: text('contact'),
     // Extensible JSON field for role-specific fields
-    extra: jsonb('extra').notNull().default('{}'),
+    meta_data: jsonb('meta_data').notNull().default('{}'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

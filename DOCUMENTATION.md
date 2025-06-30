@@ -91,6 +91,38 @@ To maintain consistency and quality throughout the project lifecycle, all team m
     - Cache expensive query results
     - Use connection pooling for database connections
 
+### Mobile Responsiveness Rules
+
+1. **Mobile-First Design**:
+
+    - Always design for mobile first, then enhance for larger screens
+    - Use responsive breakpoints: `sm:` (640px), `md:` (768px), `lg:` (1024px), `xl:` (1280px)
+    - Test on actual mobile devices, not just browser dev tools
+
+2. **Layout Guidelines**:
+
+    - Use `flex-col sm:flex-row` for responsive flex layouts
+    - Implement `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` for responsive grids
+    - Use `w-full sm:w-auto` for responsive button widths
+    - Apply `p-4 sm:p-6` for responsive padding
+
+3. **Navigation Requirements**:
+
+    - Implement hamburger menus for mobile navigation
+    - Use horizontal scrolling for tab navigation on small screens
+    - Ensure touch targets are at least 44px in size
+
+4. **Data Display**:
+
+    - Use card layouts for mobile table alternatives
+    - Implement `hidden sm:block` and `block sm:hidden` for responsive content
+    - Stack form fields vertically on mobile with appropriate spacing
+
+5. **Dialog and Modal Optimization**:
+    - Add `max-h-[90vh] overflow-y-auto` to dialog content
+    - Use full-width buttons on mobile: `w-full sm:w-auto`
+    - Implement proper button ordering with `order-1 sm:order-2`
+
 ## Tech Stack
 
 The project combines the following technologies:
@@ -447,6 +479,69 @@ import { ComponentName } from '@/components/ui/component-name';
 export function MyComponent() {
     return <ComponentName />;
 }
+```
+
+#### 5. Mobile Responsiveness Implementation
+
+1. **Responsive Layout Example**:
+
+```typescript
+// Mobile-first responsive component
+export function ResponsiveComponent() {
+    return (
+        <div className="flex flex-col sm:flex-row gap-4 p-4 sm:p-6">
+            <div className="flex-1">
+                <h2 className="text-lg sm:text-xl font-semibold">Title</h2>
+                <p className="text-sm sm:text-base text-gray-600">Description</p>
+            </div>
+            <Button className="w-full sm:w-auto">
+                Action
+            </Button>
+        </div>
+    );
+}
+```
+
+2. **Responsive Table/List Pattern**:
+
+```typescript
+// Dual layout for mobile and desktop
+export function ResponsiveDataDisplay({ items }) {
+    return (
+        <div className="space-y-4 sm:space-y-0">
+            {/* Mobile card layout */}
+            <div className="block sm:hidden space-y-4">
+                {items.map(item => (
+                    <Card key={item.id}>
+                        <CardContent className="p-4">
+                            <h4 className="font-medium">{item.name}</h4>
+                            <p className="text-sm text-gray-600">{item.description}</p>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            {/* Desktop table layout */}
+            <div className="hidden sm:block">
+                <table className="w-full">
+                    {/* Table content */}
+                </table>
+            </div>
+        </div>
+    );
+}
+```
+
+3. **Responsive Tab Navigation**:
+
+```typescript
+// Horizontally scrollable tabs
+<div className="overflow-x-auto">
+    <TabsList className="inline-flex w-max min-w-full">
+        <TabsTrigger value="tab1" className="whitespace-nowrap">Tab One</TabsTrigger>
+        <TabsTrigger value="tab2" className="whitespace-nowrap">Tab Two</TabsTrigger>
+    </TabsList>
+</div>
 ```
 
 ### Project Organization

@@ -23,10 +23,87 @@ const ProfileInput = z.object({
     fullName: z.string().min(1),
     contact: z.string().optional(),
     roleId: z.number(),
-    extra: z.record(z.any()).optional(),
+    meta_data: z
+        .object({
+            email: z.string().email().optional(),
+            university: z.string().optional(),
+            department: z.string().optional(),
+            bio: z.string().optional(),
+            skills: z
+                .array(
+                    z.object({
+                        id: z.string(),
+                        name: z.string(),
+                        category: z.string(),
+                        level: z.string().optional(),
+                    }),
+                )
+                .optional(),
+            certifications: z
+                .array(
+                    z.object({
+                        id: z.string(),
+                        name: z.string(),
+                        issuer: z.string(),
+                        issueDate: z.string(),
+                        expiryDate: z.string().optional(),
+                        type: z.string(),
+                    }),
+                )
+                .optional(),
+            awards: z
+                .array(
+                    z.object({
+                        id: z.string(),
+                        name: z.string(),
+                        awardFor: z.string(),
+                        issuingOrganization: z.string(),
+                        issueDate: z.string(),
+                        description: z.string(),
+                    }),
+                )
+                .optional(),
+            projects: z
+                .array(
+                    z.object({
+                        id: z.string(),
+                        name: z.string(),
+                        role: z.string(),
+                        collaborators: z.string(),
+                        publicationDate: z.string(),
+                        abstract: z.string(),
+                    }),
+                )
+                .optional(),
+            journals: z
+                .array(
+                    z.object({
+                        id: z.string(),
+                        title: z.string(),
+                        status: z.string(),
+                        publicationDate: z.string(),
+                        collaborators: z.string(),
+                        file: z.any().optional(),
+                    }),
+                )
+                .optional(),
+            patents: z
+                .array(
+                    z.object({
+                        id: z.string(),
+                        name: z.string(),
+                        patentFor: z.string(),
+                        collaborators: z.string(),
+                        awardedDate: z.string(),
+                        awardingBody: z.string(),
+                    }),
+                )
+                .optional(),
+        })
+        .optional(),
 });
 
-const ProfileUpdateInput = ProfileInput.partial().extend({ id: z.number() });
+const ProfileUpdateInput = ProfileInput.partial();
 export const profileRouter = router({
     getProfile: publicProcedure.query(async ({ ctx }) => {
         const headers = ctx.req ? new Headers(ctx.req.headers) : new Headers();
@@ -51,11 +128,15 @@ export const profileRouter = router({
                 : new Headers();
             const session = await getUserSession(headers);
             if (!session?.user) throw new Error('Unauthorized');
-            await db
+
+            // Update the user's own profile
+            const [updatedProfile] = await db
                 .update(userProfiles)
                 .set({ ...input, updatedAt: new Date() })
-                .where(eq(userProfiles.id, input.id));
-            return { success: true };
+                .where(eq(userProfiles.userId, session.user.id))
+                .returning();
+
+            return updatedProfile;
         }),
     createProfile: publicProcedure
         .input(ProfileInput)

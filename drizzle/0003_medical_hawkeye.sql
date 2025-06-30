@@ -1,0 +1,1 @@
+ALTER TABLE "user_profiles" RENAME COLUMN "extra" TO "meta_data";

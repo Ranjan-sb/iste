@@ -1,15 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import {
     Select,
     SelectContent,
@@ -18,6 +20,17 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import {
     Form,
     FormControl,
@@ -26,6 +39,8 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
+import { trpc } from '@/providers/trpc-provider';
+import { useSession } from '@/server/auth/client';
 import {
     AlertCircle,
     User,
@@ -33,24 +48,26 @@ import {
     Users,
     Building,
     ArrowLeft,
+    Plus,
+    X,
+    Edit,
+    Trash2,
+    Award,
+    BookOpen,
+    FileText,
+    Lightbulb,
+    Upload,
     CheckCircle,
 } from 'lucide-react';
-import { trpc } from '@/providers/trpc-provider';
-import { useSession } from '@/server/auth/client';
+import Link from 'next/link';
 import {
-    SkillsDialogButton,
+    SkillForm,
     SkillsSection,
     CertificationsSection,
     AwardsSection,
     ProjectsSection,
     JournalsSection,
     PatentsSection,
-    type Skill,
-    type Certification,
-    type Award,
-    type Project,
-    type Journal,
-    type Patent,
 } from '@/components/profile/profile-form-components';
 
 const profileSchema = z.object({
@@ -65,7 +82,59 @@ const profileSchema = z.object({
 
 type ProfileForm = z.infer<typeof profileSchema>;
 
-export default function CreateProfilePage() {
+type Skill = {
+    id: string;
+    name: string;
+    category: string;
+    level?: string;
+};
+
+type Certification = {
+    id: string;
+    name: string;
+    issuer: string;
+    issueDate: string;
+    expiryDate?: string;
+    type: string;
+};
+
+type Award = {
+    id: string;
+    name: string;
+    awardFor: string;
+    issuingOrganization: string;
+    issueDate: string;
+    description: string;
+};
+
+type Project = {
+    id: string;
+    name: string;
+    role: string;
+    collaborators: string;
+    publicationDate: string;
+    abstract: string;
+};
+
+type Journal = {
+    id: string;
+    title: string;
+    status: string;
+    publicationDate: string;
+    collaborators: string;
+    file?: File | null;
+};
+
+type Patent = {
+    id: string;
+    name: string;
+    patentFor: string;
+    collaborators: string;
+    awardedDate: string;
+    awardingBody: string;
+};
+
+export default function EditProfilePage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -80,17 +149,12 @@ export default function CreateProfilePage() {
     const { data: session } = useSession();
 
     const { data: roles } = trpc.profile.getRoles.useQuery();
-    const { data: existingProfile } = trpc.profile.getProfile.useQuery(
-        undefined,
-        {
-            enabled: !!session?.user,
-            retry: false,
-        },
-    );
+    const { data: existingProfile, isLoading: profileLoading } =
+        trpc.profile.getProfile.useQuery();
 
-    const createProfile = trpc.profile.createProfile.useMutation({
+    const updateProfile = trpc.profile.updateProfile.useMutation({
         onSuccess: () => {
-            router.push('/dashboard');
+            setSuccessMessage('Profile updated successfully!');
         },
         onError: (error) => {
             setError(error.message);
@@ -110,8 +174,8 @@ export default function CreateProfilePage() {
     const form = useForm<ProfileForm>({
         resolver: zodResolver(profileSchema),
         defaultValues: {
-            fullName: session?.user?.name || '',
-            email: session?.user?.email || '',
+            fullName: '',
+            email: '',
             contact: '',
             roleId: 0,
             university: '',
@@ -119,6 +183,38 @@ export default function CreateProfilePage() {
             bio: '',
         },
     });
+
+    // Load existing profile data when available
+    useEffect(() => {
+        if (existingProfile) {
+            // Type-safe access to meta_data
+            const metaData = existingProfile.meta_data as Record<
+                string,
+                any
+            > | null;
+
+            // Update form with existing basic profile data
+            form.reset({
+                fullName: existingProfile.fullName || '',
+                email: metaData?.email || session?.user?.email || '',
+                contact: existingProfile.contact || '',
+                roleId: existingProfile.roleId || 0,
+                university: metaData?.university || '',
+                department: metaData?.department || '',
+                bio: metaData?.bio || '',
+            });
+
+            // Load existing complex data
+            if (metaData) {
+                setSkills(metaData.skills || []);
+                setCertifications(metaData.certifications || []);
+                setAwards(metaData.awards || []);
+                setProjects(metaData.projects || []);
+                setJournals(metaData.journals || []);
+                setPatents(metaData.patents || []);
+            }
+        }
+    }, [existingProfile, form, session?.user?.email]);
 
     // Helper functions for managing sections
     const addSkill = (skill: Omit<Skill, 'id'>) => {
@@ -199,10 +295,9 @@ export default function CreateProfilePage() {
         };
 
         try {
-            // Create new profile
-            await createProfile.mutateAsync(profileData);
-            setSuccessMessage('Profile created successfully!');
-        } catch {
+            await updateProfile.mutateAsync(profileData);
+            setSuccessMessage('Profile updated successfully!');
+        } catch (err) {
             // Error handled by mutation onError
         } finally {
             setIsLoading(false);
@@ -222,32 +317,36 @@ export default function CreateProfilePage() {
         );
     }
 
-    // If profile already exists, redirect to edit page
-    if (existingProfile) {
+    if (profileLoading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
                 <div className="text-center">
-                    <User className="mx-auto mb-4 h-12 w-12 text-blue-600" />
+                    <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
+                    <p className="text-gray-600 dark:text-gray-300">
+                        Loading profile...
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!existingProfile) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+                <div className="text-center">
+                    <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-600" />
                     <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
-                        Profile Already Exists
+                        Profile Not Found
                     </h1>
                     <p className="mb-4 text-gray-600 dark:text-gray-300">
-                        You already have a profile. You can edit it instead.
+                        You need to create a profile first before you can edit
+                        it.
                     </p>
-                    <div className="flex flex-col justify-center gap-2 sm:flex-row">
-                        <Button
-                            onClick={() => router.push('/profile/edit')}
-                            className="bg-blue-600 hover:bg-blue-700"
-                        >
-                            Edit Profile
+                    <Link href="/profile/create">
+                        <Button className="bg-blue-600 hover:bg-blue-700">
+                            Create Profile
                         </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => router.push('/dashboard')}
-                        >
-                            Go to Dashboard
-                        </Button>
-                    </div>
+                    </Link>
                 </div>
             </div>
         );
@@ -265,11 +364,11 @@ export default function CreateProfilePage() {
                         Back to Dashboard
                     </Link>
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                        Create Profile
+                        Edit Profile
                     </h1>
                     <p className="mt-2 text-gray-600 dark:text-gray-300">
-                        Create and manage your professional profile to showcase
-                        your expertise
+                        Update your professional profile to showcase your latest
+                        expertise
                     </p>
                 </div>
 
@@ -359,6 +458,7 @@ export default function CreateProfilePage() {
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex items-center space-x-2">
+                                                <Edit className="h-4 w-4 text-gray-400" />
                                                 <p className="text-gray-600 dark:text-gray-300">
                                                     Update your profile
                                                     information to help others
@@ -380,7 +480,7 @@ export default function CreateProfilePage() {
                                                     <FormControl>
                                                         <Input
                                                             {...field}
-                                                            placeholder="Anashku"
+                                                            placeholder="Your Full Name"
                                                             disabled={isLoading}
                                                         />
                                                     </FormControl>
@@ -398,7 +498,7 @@ export default function CreateProfilePage() {
                                                     <FormControl>
                                                         <Input
                                                             {...field}
-                                                            placeholder="anashku.edu@gmail.com"
+                                                            placeholder="your.email@example.com"
                                                             disabled={isLoading}
                                                         />
                                                     </FormControl>
@@ -422,10 +522,11 @@ export default function CreateProfilePage() {
                                                             )
                                                         }
                                                         disabled={isLoading}
+                                                        value={field.value?.toString()}
                                                     >
                                                         <FormControl>
                                                             <SelectTrigger>
-                                                                <SelectValue placeholder="Faculty" />
+                                                                <SelectValue placeholder="Select your role" />
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent>
@@ -491,10 +592,11 @@ export default function CreateProfilePage() {
                                                             field.onChange
                                                         }
                                                         disabled={isLoading}
+                                                        value={field.value}
                                                     >
                                                         <FormControl>
                                                             <SelectTrigger>
-                                                                <SelectValue placeholder="Atria Institute of Technology" />
+                                                                <SelectValue placeholder="Select your university" />
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent>
@@ -545,10 +647,11 @@ export default function CreateProfilePage() {
                                                             field.onChange
                                                         }
                                                         disabled={isLoading}
+                                                        value={field.value}
                                                     >
                                                         <FormControl>
                                                             <SelectTrigger>
-                                                                <SelectValue placeholder="Computer science" />
+                                                                <SelectValue placeholder="Select your department" />
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent>
@@ -596,7 +699,7 @@ export default function CreateProfilePage() {
                                                     <FormControl>
                                                         <Input
                                                             {...field}
-                                                            placeholder="9876543210"
+                                                            placeholder="Your phone number"
                                                             disabled={isLoading}
                                                         />
                                                     </FormControl>
@@ -616,7 +719,7 @@ export default function CreateProfilePage() {
                                                     <FormControl>
                                                         <Textarea
                                                             {...field}
-                                                            placeholder="Computer science"
+                                                            placeholder="Tell us about yourself"
                                                             disabled={isLoading}
                                                             rows={4}
                                                         />
@@ -654,7 +757,7 @@ export default function CreateProfilePage() {
                                         >
                                             {isLoading
                                                 ? 'Saving...'
-                                                : 'Save Profile'}
+                                                : 'Save Changes'}
                                         </Button>
                                     </div>
                                 </TabsContent>
@@ -676,9 +779,24 @@ export default function CreateProfilePage() {
                                                     capabilities
                                                 </p>
                                             </div>
-                                            <SkillsDialogButton
-                                                onAdd={addSkill}
-                                            />
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <Button className="w-full bg-black text-white hover:bg-gray-800 sm:w-auto">
+                                                        <Edit className="mr-2 h-4 w-4" />
+                                                        Add
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent className="max-h-[90vh] overflow-y-auto">
+                                                    <DialogHeader>
+                                                        <DialogTitle>
+                                                            Add a new skill
+                                                        </DialogTitle>
+                                                    </DialogHeader>
+                                                    <SkillForm
+                                                        onSubmit={addSkill}
+                                                    />
+                                                </DialogContent>
+                                            </Dialog>
                                         </div>
 
                                         <SkillsSection
@@ -688,7 +806,7 @@ export default function CreateProfilePage() {
                                     </div>
                                 </TabsContent>
 
-                                {/* Other tabs use the imported components */}
+                                {/* Other tabs */}
                                 <TabsContent value="certifications">
                                     <CertificationsSection
                                         certifications={certifications}
@@ -751,8 +869,8 @@ export default function CreateProfilePage() {
                                         className="order-1 flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 sm:order-2"
                                     >
                                         {isLoading
-                                            ? 'Creating Profile...'
-                                            : 'Create Profile'}
+                                            ? 'Updating Profile...'
+                                            : 'Update Profile'}
                                     </Button>
                                 </div>
                             </form>

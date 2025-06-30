@@ -131,6 +131,26 @@ export default function DashboardPage() {
                             </Button>
                         </div>
                     )}
+                    {profile && (
+                        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                            <Button
+                                variant="outline"
+                                onClick={() => router.push('/profile')}
+                                className="flex w-full items-center gap-2 sm:w-auto"
+                            >
+                                <User className="h-4 w-4" />
+                                View Profile
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => router.push('/profile/edit')}
+                                className="flex w-full items-center gap-2 sm:w-auto"
+                            >
+                                <Settings className="h-4 w-4" />
+                                Edit Profile
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
                 <Tabs
@@ -138,14 +158,34 @@ export default function DashboardPage() {
                     onValueChange={setActiveTab}
                     className="space-y-6"
                 >
-                    <TabsList className="grid w-full grid-cols-4">
-                        <TabsTrigger value="overview">Overview</TabsTrigger>
-                        <TabsTrigger value="profile">Profile</TabsTrigger>
-                        <TabsTrigger value="awards">Awards</TabsTrigger>
-                        <TabsTrigger value="applications">
-                            Applications
-                        </TabsTrigger>
-                    </TabsList>
+                    <div className="overflow-x-auto">
+                        <TabsList className="inline-flex w-max min-w-full">
+                            <TabsTrigger
+                                value="overview"
+                                className="whitespace-nowrap"
+                            >
+                                Overview
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="profile"
+                                className="whitespace-nowrap"
+                            >
+                                Profile
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="awards"
+                                className="whitespace-nowrap"
+                            >
+                                Awards
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="applications"
+                                className="whitespace-nowrap"
+                            >
+                                Applications
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
 
                     <TabsContent value="overview" className="space-y-6">
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

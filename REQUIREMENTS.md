@@ -61,6 +61,17 @@ ISTE is a platform where users can create and manage their profiles. The platfor
 - UI should be modern, responsive, and accessible.
 - Code quality must be enforced with ESLint, Prettier, and pre-commit hooks.
 
+### 8. Mobile Responsiveness
+
+- The entire application must be fully responsive and mobile-first.
+- All pages, components, and dialogs must work seamlessly on mobile devices (320px and up).
+- Navigation should adapt to mobile screens with hamburger menus and touch-friendly interfaces.
+- Tables and data displays should have mobile-optimized layouts (cards, stacked layouts).
+- Form layouts should stack vertically on mobile devices with full-width inputs.
+- Buttons should be appropriately sized for touch interaction.
+- Text should be readable without horizontal scrolling on mobile devices.
+- Tab navigation should be horizontally scrollable on smaller screens.
+
 ## Future Considerations
 
 - Support for additional authentication providers (Google, GitHub, etc.).
