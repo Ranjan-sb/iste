@@ -4,6 +4,7 @@ import './globals.css';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { TRPCProvider } from '@/providers/trpc-provider';
 import { cn } from '@/lib/utils';
+import Navbar from '@/components/navigation/navbar';
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -41,7 +42,10 @@ export default function RootLayout({
                     enableSystem
                     disableTransitionOnChange
                 >
-                    <TRPCProvider>{children}</TRPCProvider>
+                    <TRPCProvider>
+                        <Navbar />
+                        {children}
+                    </TRPCProvider>
                 </ThemeProvider>
             </body>
         </html>

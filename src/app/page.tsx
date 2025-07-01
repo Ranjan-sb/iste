@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import Navbar from '@/components/navigation/navbar';
+
 import {
     Award,
     Users,
@@ -25,6 +25,7 @@ import {
     ArrowRight,
     Sparkles,
 } from 'lucide-react';
+import isteLogo from '@/logos/pngs/ISTE.png';
 
 const ISTELandingPage = () => {
     const features = [
@@ -153,9 +154,6 @@ const ISTELandingPage = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-            {/* Navigation */}
-            <Navbar variant="landing" />
-
             {/* Hero Section */}
             <section className="px-4 py-20 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-7xl">
@@ -428,7 +426,7 @@ const ISTELandingPage = () => {
                         who are already using our platform to achieve
                         recognition and excellence.
                     </p>
-                    <div className="flex flex-col justify-center gap-4 sm:flex-row">
+                    {/* <div className="flex flex-col justify-center gap-4 sm:flex-row">
                         <Button
                             size="lg"
                             className="bg-white px-8 py-3 text-lg text-blue-600 hover:bg-gray-100"
@@ -443,7 +441,7 @@ const ISTELandingPage = () => {
                         >
                             Schedule a Demo
                         </Button>
-                    </div>
+                    </div> */}
                 </div>
             </section>
 
@@ -456,8 +454,13 @@ const ISTELandingPage = () => {
                     <div className="grid gap-8 md:grid-cols-4">
                         <div>
                             <div className="mb-4 flex items-center space-x-3">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600">
-                                    <Award className="h-5 w-5 text-white" />
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg">
+                                    {/* <Award className="h-5 w-5 text-white" /> */}
+                                    <img
+                                        src={isteLogo.src}
+                                        alt="ISTE Logo"
+                                        className="h-8 w-8 object-contain"
+                                    />
                                 </div>
                                 <span className="text-lg font-bold">
                                     ISTE Platform
