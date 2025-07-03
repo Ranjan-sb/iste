@@ -97,20 +97,6 @@ export default function ProfilePage() {
     const roleName = userRole?.name || 'User';
     const meta_data = (profile.meta_data as any) || {};
 
-    // Debug logging to check data structure
-    if (process.env.NODE_ENV === 'development') {
-        console.log('=== PROFILE DEBUG ===');
-        console.log('Full profile object:', profile);
-        console.log('Meta data object:', meta_data);
-        console.log('Skills array:', meta_data.skills);
-        console.log('Certifications array:', meta_data.certifications);
-        console.log('Awards array:', meta_data.awards);
-        console.log('Projects array:', meta_data.projects);
-        console.log('Journals array:', meta_data.journals);
-        console.log('Patents array:', meta_data.patents);
-        console.log('===================');
-    }
-
     const getRoleIcon = (roleName: string) => {
         switch (roleName.toLowerCase()) {
             case 'student':
@@ -859,38 +845,6 @@ export default function ProfilePage() {
                                     const percentage =
                                         (completedSections / totalSections) *
                                         100;
-
-                                    // Debug logging
-                                    if (
-                                        process.env.NODE_ENV === 'development'
-                                    ) {
-                                        console.log(
-                                            'Profile completion debug:',
-                                            {
-                                                totalSections,
-                                                completedSections,
-                                                percentage,
-                                                skillsCount:
-                                                    meta_data.skills?.length ||
-                                                    0,
-                                                certificationsCount:
-                                                    meta_data.certifications
-                                                        ?.length || 0,
-                                                awardsCount:
-                                                    meta_data.awards?.length ||
-                                                    0,
-                                                projectsCount:
-                                                    meta_data.projects
-                                                        ?.length || 0,
-                                                journalsCount:
-                                                    meta_data.journals
-                                                        ?.length || 0,
-                                                patentsCount:
-                                                    meta_data.patents?.length ||
-                                                    0,
-                                            },
-                                        );
-                                    }
 
                                     return (
                                         <div className="space-y-3">
