@@ -153,7 +153,6 @@ const CreateAwardPage = () => {
                 const normalizedData = normalizeFormData(parsedDraft);
                 setFormData(normalizedData);
                 setDraftLoaded(true);
-                console.log('Loaded draft from localStorage');
             } catch (error) {
                 console.error('Error loading draft:', error);
             }
@@ -245,7 +244,6 @@ const CreateAwardPage = () => {
         const autoSaveInterval = setInterval(() => {
             if (formData.name || formData.description) {
                 localStorage.setItem('award-draft', JSON.stringify(formData));
-                console.log('Auto-saved draft');
             }
         }, 30000); // 30 seconds
 
@@ -356,7 +354,6 @@ const CreateAwardPage = () => {
         setIsSavingDraft(true);
         try {
             localStorage.setItem('award-draft', JSON.stringify(formData));
-            console.log('Draft saved to localStorage:', formData);
             addAlert('success', 'Draft Saved', 'Draft saved successfully!');
         } catch (error) {
             console.error('Error saving draft:', error);
