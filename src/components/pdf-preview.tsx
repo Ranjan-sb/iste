@@ -64,9 +64,14 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({
 
         // Configure PDF.js worker only on client side
         if (typeof window !== 'undefined') {
-            const { pdfjs } = require('react-pdf');
-            // Use local worker file to avoid CORS issues
-            pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+            import('react-pdf')
+                .then(({ pdfjs }) => {
+                    // Use local worker file to avoid CORS issues
+                    pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+                })
+                .catch((error) => {
+                    console.error('Failed to load react-pdf:', error);
+                });
         }
     }, []);
 

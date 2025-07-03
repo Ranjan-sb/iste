@@ -162,7 +162,7 @@ const ISTELandingPage = () => {
                             Indian Society for Technical Education
                         </Badge>
                         <h1 className="mb-6 text-5xl font-bold text-gray-900 md:text-7xl dark:text-white">
-                            Empowering India's
+                            Empowering India&apos;s
                             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                 {' '}
                                 Educational Excellence
@@ -221,7 +221,7 @@ const ISTELandingPage = () => {
                 <div className="mx-auto max-w-7xl">
                     <div className="mb-16 text-center">
                         <h2 className="mb-4 text-4xl font-bold text-gray-900 dark:text-white">
-                            Built for Every Member of India's Educational
+                            Built for Every Member of India&apos;s Educational
                             Community
                         </h2>
                         <p className="text-xl text-gray-600 dark:text-gray-300">
@@ -467,7 +467,7 @@ const ISTELandingPage = () => {
                                 </span>
                             </div>
                             <p className="text-gray-400">
-                                Empowering India's educational excellence
+                                Empowering India&apos;s educational excellence
                                 through technology and recognition.
                             </p>
                         </div>

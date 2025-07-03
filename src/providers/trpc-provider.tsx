@@ -11,7 +11,7 @@ import type { AppRouter } from '@/server/trpc/router';
 export const trpc = createTRPCReact<AppRouter>();
 
 // Provider to wrap your app with both tRPC and React Query
-export function TRPCProvider({ children }: React.PropsWithChildren<{}>) {
+export function TRPCProvider({ children }: React.PropsWithChildren) {
     const [queryClient] = React.useState(() => new QueryClient());
     const [trpcClient] = React.useState(() =>
         trpc.createClient({

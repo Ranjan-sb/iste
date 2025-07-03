@@ -123,7 +123,7 @@ export async function fileExists(key: string): Promise<boolean> {
 
         await s3Client.send(command);
         return true;
-    } catch (error) {
+    } catch {
         return false;
     }
 }
@@ -151,7 +151,7 @@ export async function getFileMetadata(key: string): Promise<{
             lastModified: response.LastModified || new Date(),
             metadata: response.Metadata || {},
         };
-    } catch (error) {
+    } catch {
         return null;
     }
 }
