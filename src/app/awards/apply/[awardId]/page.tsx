@@ -40,15 +40,14 @@ import {
 } from 'lucide-react';
 import { trpc } from '@/providers/trpc-provider';
 import { formatDeadline } from '@/lib/date-utils';
+import {
+    ApplicationFormData,
+    FileData,
+    Guide,
+    Project,
+} from '@/types/application-types';
+import StandardApplicationFields from '@/components/standard-application-fields';
 import Link from 'next/link';
-
-// File Upload Component
-interface FileData {
-    id: number;
-    filename: string;
-    size: number;
-    mimetype: string;
-}
 
 interface FileUploadFieldProps {
     value?: FileData;
@@ -237,6 +236,27 @@ const AwardApplicationPage = () => {
     const awardId = parseInt(params.awardId as string);
 
     const [formData, setFormData] = useState<Record<string, any>>({});
+    const [standardData, setStandardData] = useState<ApplicationFormData>({
+        // Personal Information
+        applicantName: '',
+        designation: '',
+        address: '',
+        pincode: '',
+        phoneNumber: '',
+        dateOfBirth: '',
+        academicQualification: '',
+        fieldOfSpecialization: '',
+        // Professional Information
+        department: '',
+        semesterYear: '',
+        teachingExperience: { ug: '', pg: '' },
+        industryExperience: '',
+        otherExperience: '',
+        isMember: false,
+        institutionAddress: '',
+        // Project Information
+        projects: [],
+    });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [alerts, setAlerts] = useState<
         Array<{
@@ -282,14 +302,94 @@ const AwardApplicationPage = () => {
     };
 
     const validateForm = (): boolean => {
-        if (!award?.customFields || !Array.isArray(award.customFields))
-            return false;
+        // Validate standard fields
+        const requiredStandardFields = [
+            standardData.applicantName,
+            standardData.designation,
+            standardData.address,
+            standardData.pincode,
+            standardData.phoneNumber,
+            standardData.dateOfBirth,
+            standardData.academicQualification,
+            standardData.fieldOfSpecialization,
+            standardData.department,
+            standardData.institutionAddress,
+        ];
 
-        for (const field of award.customFields) {
-            if (field.required && !formData[`question_${field.order}`]) {
+        // Add category-specific validation
+        if (award?.category === 'student' && !standardData.semesterYear) {
+            return false;
+        }
+
+        if (award?.category === 'faculty') {
+            const teachingExp = standardData.teachingExperience;
+            if (!teachingExp || (!teachingExp.ug && !teachingExp.pg)) {
                 return false;
             }
         }
+
+        // Check if any required standard field is empty
+        if (
+            requiredStandardFields.some(
+                (field) => !field || field.trim() === '',
+            )
+        ) {
+            return false;
+        }
+
+        // Validate projects (at least one project required)
+        const projects = standardData.projects || [];
+        if (projects.length === 0) {
+            return false;
+        }
+
+        // Validate each project
+        for (const project of projects) {
+            if (!project.title || !project.outstandingWorkArea) {
+                return false;
+            }
+
+            // Brief resume validation: either text OR file must be provided
+            if (!project.briefResume && !project.briefResumeFile) {
+                return false;
+            }
+
+            // Institution remarks are required
+            if (!project.institutionRemarks) {
+                return false;
+            }
+
+            if (
+                project.benefits.some(
+                    (benefit) => !benefit || benefit.trim() === '',
+                )
+            ) {
+                return false;
+            }
+            if (project.guides.length === 0) {
+                return false;
+            }
+            for (const guide of project.guides) {
+                if (
+                    !guide.name ||
+                    !guide.address ||
+                    !guide.email ||
+                    !guide.mobile
+                ) {
+                    return false;
+                }
+            }
+        }
+
+        // Validate custom fields
+        if (award?.customFields && Array.isArray(award.customFields)) {
+            for (const field of award.customFields) {
+                if (field.required && !formData[`question_${field.order}`]) {
+                    return false;
+                }
+            }
+        }
+
         return true;
     };
 
@@ -310,7 +410,10 @@ const AwardApplicationPage = () => {
         try {
             await submitApplicationMutation.mutateAsync({
                 awardId,
-                formData,
+                formData: {
+                    ...formData,
+                    ...standardData,
+                },
             });
 
             // Clear localStorage draft
@@ -348,23 +451,32 @@ const AwardApplicationPage = () => {
 
     const saveDraft = async () => {
         try {
+            const combinedData = {
+                ...formData,
+                ...standardData,
+            };
+
             await saveDraftMutation.mutateAsync({
                 awardId,
-                formData,
+                formData: combinedData,
             });
 
             // Also save to localStorage as backup
             localStorage.setItem(
                 `award-application-${awardId}`,
-                JSON.stringify(formData),
+                JSON.stringify(combinedData),
             );
             addAlert('success', 'Draft Saved', 'Draft saved successfully!');
         } catch (error: any) {
             console.error('Error saving draft:', error);
             // Fallback to localStorage only
+            const combinedData = {
+                ...formData,
+                ...standardData,
+            };
             localStorage.setItem(
                 `award-application-${awardId}`,
-                JSON.stringify(formData),
+                JSON.stringify(combinedData),
             );
             addAlert(
                 'info',
@@ -378,7 +490,41 @@ const AwardApplicationPage = () => {
     React.useEffect(() => {
         const savedDraft = localStorage.getItem(`award-application-${awardId}`);
         if (savedDraft) {
-            setFormData(JSON.parse(savedDraft));
+            const draftData = JSON.parse(savedDraft);
+
+            // Separate standard fields from custom fields
+            const standardFields = {
+                applicantName: draftData.applicantName || '',
+                designation: draftData.designation || '',
+                address: draftData.address || '',
+                pincode: draftData.pincode || '',
+                phoneNumber: draftData.phoneNumber || '',
+                dateOfBirth: draftData.dateOfBirth || '',
+                academicQualification: draftData.academicQualification || '',
+                fieldOfSpecialization: draftData.fieldOfSpecialization || '',
+                department: draftData.department || '',
+                semesterYear: draftData.semesterYear || '',
+                teachingExperience: draftData.teachingExperience || {
+                    ug: '',
+                    pg: '',
+                },
+                industryExperience: draftData.industryExperience || '',
+                otherExperience: draftData.otherExperience || '',
+                isMember: draftData.isMember || false,
+                institutionAddress: draftData.institutionAddress || '',
+                projects: draftData.projects || [],
+            };
+
+            // Extract custom fields (anything that starts with 'question_')
+            const customFields: Record<string, any> = {};
+            Object.keys(draftData).forEach((key) => {
+                if (key.startsWith('question_')) {
+                    customFields[key] = draftData[key];
+                }
+            });
+
+            setStandardData(standardFields);
+            setFormData(customFields);
         }
     }, [awardId]);
 
@@ -800,24 +946,41 @@ const AwardApplicationPage = () => {
                         </p>
                     </div>
 
+                    {/* Standard Application Fields */}
+                    {
+                        StandardApplicationFields({
+                            category: award.category as
+                                | 'student'
+                                | 'faculty'
+                                | 'institution',
+                            data: standardData,
+                            onChange: setStandardData,
+                            onAlert: addAlert,
+                        }) as any
+                    }
+
+                    {/* Custom Fields Section */}
                     {award.customFields &&
-                    Array.isArray(award.customFields) &&
-                    award.customFields.length > 0 ? (
-                        award.customFields
-                            .sort((a: any, b: any) => a.order - b.order)
-                            .map((field: any, index: number) =>
-                                renderFormField(field, index),
-                            )
-                    ) : (
-                        <Card>
-                            <CardContent className="pt-6">
-                                <p className="text-center text-gray-500">
-                                    No application form has been configured for
-                                    this award.
-                                </p>
-                            </CardContent>
-                        </Card>
-                    )}
+                        Array.isArray(award.customFields) &&
+                        award.customFields.length > 0 && (
+                            <div className="space-y-6">
+                                <div className="border-t pt-6">
+                                    <h3 className="mb-4 text-lg font-semibold">
+                                        Additional Questions
+                                    </h3>
+                                    <div className="space-y-6">
+                                        {award.customFields
+                                            .sort(
+                                                (a: any, b: any) =>
+                                                    a.order - b.order,
+                                            )
+                                            .map((field: any, index: number) =>
+                                                renderFormField(field, index),
+                                            )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                     {/* Action Buttons */}
                     <div className="flex items-center justify-between pt-6">

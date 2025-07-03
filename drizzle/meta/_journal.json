@@ -43,6 +43,34 @@
             "when": 1751375879457,
             "tag": "0005_true_agent_brand",
             "breakpoints": true
+        },
+        {
+            "idx": 6,
+            "version": "7",
+            "when": 1751441026894,
+            "tag": "0006_fancy_vance_astro",
+            "breakpoints": true
+        },
+        {
+            "idx": 7,
+            "version": "7",
+            "when": 1751441318667,
+            "tag": "0007_vengeful_namorita",
+            "breakpoints": true
+        },
+        {
+            "idx": 8,
+            "version": "7",
+            "when": 1751442851640,
+            "tag": "0008_flaky_swordsman",
+            "breakpoints": true
+        },
+        {
+            "idx": 9,
+            "version": "7",
+            "when": 1751452874914,
+            "tag": "0009_married_gabe_jones",
+            "breakpoints": true
         }
     ]
 }

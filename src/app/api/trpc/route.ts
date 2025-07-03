@@ -1,25 +1,12 @@
-import { initTRPC } from '@trpc/server';
-import superjson from 'superjson';
-import { createNextApiHandler } from '@trpc/server/adapters/next';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { appRouter, createContext } from '@/server/trpc/router';
 
-// Initialize tRPC with a JSON transformer
-const t = initTRPC.context<{}>().create({
-    transformer: superjson,
-});
-const router = t.router;
-const publicProcedure = t.procedure;
+const handler = (req: Request) =>
+    fetchRequestHandler({
+        endpoint: '/api/trpc',
+        req,
+        router: appRouter,
+        createContext,
+    });
 
-// Root router with hello world route
-const appRouter = router({
-    hello: publicProcedure.query(() => 'Hello world'),
-});
-
-// Export type definition of the API
-export type AppRouter = typeof appRouter;
-
-// Next.js App Router handlers
-export const GET = createNextApiHandler({
-    router: appRouter,
-    createContext: () => ({}),
-});
-export const POST = GET;
+export { handler as GET, handler as POST };
