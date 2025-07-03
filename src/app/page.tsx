@@ -21,9 +21,7 @@ import {
     Star,
     Trophy,
     UserCheck,
-    Calendar,
     ArrowRight,
-    Sparkles,
 } from 'lucide-react';
 import isteLogo from '@/logos/pngs/ISTE.png';
 

@@ -16,15 +16,27 @@ const eslintConfig = [
     "plugin:prettier/recommended",
     "plugin:import/recommended",
     "plugin:promise/recommended",
-    "plugin:react/recommended",
     "plugin:@typescript-eslint/recommended"
   ),
   {
     rules: {
       "no-console": "warn",
-      "no-unused-vars": "warn",
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-empty-object-type": "warn",
       "react/prop-types": "off",
-      "import/order": ["warn", { "alphabetize": { "order": "asc" } }]
+      "react/react-in-jsx-scope": "off",
+      "react/jsx-uses-react": "off",
+      "react/no-unescaped-entities": "warn",
+      "import/order": "warn",
+      "import/named": "warn",
+      "@next/next/no-img-element": "warn"
+    },
+    settings: {
+      react: {
+        version: "detect"
+      }
     }
   }
 ];
