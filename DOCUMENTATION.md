@@ -78,6 +78,22 @@ To maintain consistency and quality throughout the project lifecycle, all team m
     - NEVER trust client-side validation alone
     - Use content security policies to prevent XSS
 
+### User Interface Rules
+
+1. **Alert System**:
+
+    - NEVER use browser `alert()`, `confirm()`, or `prompt()` functions
+    - ALWAYS use shadcn Alert components for user notifications
+    - Implement proper alert state management with dismissible alerts
+    - Use appropriate alert variants: `default`, `destructive` for errors
+    - Auto-dismiss success/info alerts after 8 seconds, keep error/warning alerts until manually dismissed
+
+2. **User Feedback**:
+    - Provide immediate visual feedback for all user actions
+    - Use loading states for async operations
+    - Show progress indicators for long-running tasks
+    - Implement proper error boundaries for graceful error handling
+
 ### Performance Rules
 
 1. **Frontend Optimization**:
@@ -185,7 +201,12 @@ rstart/
 │       │   ├── index.ts     # Database connection setup
 │       │   └── schema.ts    # Application data schema
 │       └── trpc/            # tRPC router and procedures
-│           └── router.ts    # API endpoint definitions
+│           ├── lib.ts       # Shared tRPC configuration
+│           ├── router.ts    # Main router combining sub-routers
+│           └── routers/     # Domain-specific routers
+│               ├── profile.ts     # Profile management
+│               ├── award.ts       # Award management
+│               └── application.ts # Application management
 ├── drizzle/                 # Database migrations
 ├── public/                  # Static assets
 └── [config files]           # Various configuration files
@@ -199,13 +220,32 @@ The project uses tRPC to create end-to-end typesafe APIs without manual schema d
 
 #### Procedure Definition
 
-API endpoints are defined in `src/server/trpc/router.ts`:
+API endpoints are organized into domain-specific routers in `src/server/trpc/routers/`:
 
 ```typescript
-// Define a procedure
+// src/server/trpc/routers/profile.ts
+import { router, publicProcedure, getAuthenticatedSession } from '../lib';
+
+export const profileRouter = router({
+    getProfile: publicProcedure.query(async ({ ctx }) => {
+        const session = await getAuthenticatedSession(ctx);
+        // Implementation
+    }),
+});
+```
+
+The main router in `src/server/trpc/router.ts` combines all sub-routers:
+
+```typescript
+import { profileRouter } from './routers/profile';
+import { awardRouter } from './routers/award';
+import { applicationRouter } from './routers/application';
+
 export const appRouter = router({
     hello: publicProcedure.query(() => 'Hello world'),
-    // Add your additional procedures here
+    profile: profileRouter,
+    award: awardRouter,
+    application: applicationRouter,
 });
 ```
 
@@ -267,7 +307,18 @@ pnpm db:push      # Applies migrations to your database
 
 ### 3. Authentication with better-auth
 
-The project uses better-auth for authentication with email/password support and admin features.
+The project uses [Better Auth](https://www.better-auth.com/docs/introduction) - a comprehensive, framework-agnostic authentication and authorization framework for TypeScript. Better Auth provides enterprise-grade security features with built-in rate limiting, automatic database management, and extensive plugin ecosystem.
+
+#### Why Better Auth?
+
+Better Auth was chosen for this project because it offers:
+
+- **Framework Agnostic**: Works seamlessly with Next.js and other frameworks
+- **Type Safety**: Full TypeScript support with end-to-end type safety
+- **Plugin Ecosystem**: Extensive plugins for 2FA, social auth, organizations, etc.
+- **Built-in Security**: Rate limiting, CSRF protection, and secure session management
+- **Database Agnostic**: Works with PostgreSQL, MySQL, SQLite, and more
+- **Admin Features**: Built-in admin panel and user management capabilities
 
 #### Server Configuration
 
@@ -287,7 +338,11 @@ export const auth = betterAuth({
             impersonationSessionDuration: 60 * 60 * 24,
         }),
     ],
-    // Additional configuration
+    // Additional configuration for enhanced security
+    rateLimit: {
+        window: 60, // 1 minute
+        max: 100, // 100 requests per minute
+    },
 });
 ```
 
@@ -481,7 +536,119 @@ export function MyComponent() {
 }
 ```
 
-#### 5. Mobile Responsiveness Implementation
+#### 5. Alert System Implementation
+
+1. **Alert State Management**:
+
+```typescript
+const [alerts, setAlerts] = useState<
+    Array<{
+        id: string;
+        type: 'success' | 'error' | 'warning' | 'info';
+        title: string;
+        message: string;
+    }>
+>([]);
+
+const addAlert = (
+    type: 'success' | 'error' | 'warning' | 'info',
+    title: string,
+    message: string,
+) => {
+    const id = Date.now().toString();
+    setAlerts((prev) => [...prev, { id, type, title, message }]);
+    // Auto-remove after 8 seconds for success/info alerts
+    if (type === 'success' || type === 'info') {
+        setTimeout(() => {
+            setAlerts((prev) => prev.filter((alert) => alert.id !== id));
+        }, 8000);
+    }
+};
+
+const removeAlert = (id: string) => {
+    setAlerts((prev) => prev.filter((alert) => alert.id !== id));
+};
+```
+
+2. **Alert Display Component**:
+
+```typescript
+{alerts.length > 0 && (
+    <div className="mb-6 space-y-3">
+        {alerts.map((alert) => (
+            <Alert
+                key={alert.id}
+                variant={alert.type === 'error' ? 'destructive' : 'default'}
+                className="relative"
+            >
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle className="flex items-center justify-between">
+                    {alert.title}
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeAlert(alert.id)}
+                        className="h-auto p-0 hover:bg-transparent"
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </AlertTitle>
+                <AlertDescription>
+                    {alert.message}
+                </AlertDescription>
+            </Alert>
+        ))}
+    </div>
+)}
+```
+
+3. **Usage Examples**:
+
+```typescript
+// Instead of: alert('Success!');
+addAlert('success', 'Success', 'Operation completed successfully!');
+
+// Instead of: alert('Error occurred');
+addAlert('error', 'Error', 'Something went wrong. Please try again.');
+
+// Instead of: confirm('Are you sure?') - use Dialog component
+```
+
+4. **Confirmation Dialogs**:
+
+For confirmations that previously used `confirm()`, use the shadcn Dialog component:
+
+```typescript
+const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+// In JSX:
+<Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+    <DialogContent>
+        <DialogHeader>
+            <DialogTitle>Confirm Action</DialogTitle>
+            <DialogDescription>
+                Are you sure you want to proceed? This action cannot be undone.
+            </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+            <Button
+                variant="outline"
+                onClick={() => setShowConfirmDialog(false)}
+            >
+                Cancel
+            </Button>
+            <Button
+                variant="destructive"
+                onClick={handleConfirmedAction}
+            >
+                Confirm
+            </Button>
+        </DialogFooter>
+    </DialogContent>
+</Dialog>
+```
+
+#### 6. Mobile Responsiveness Implementation
 
 1. **Responsive Layout Example**:
 
@@ -620,22 +787,71 @@ The project enforces code quality standards with ESLint and Prettier:
 
 ### Adding New Authentication Providers
 
-Update the auth configuration in `src/server/auth/server.ts` to add additional providers:
+Better Auth supports multiple OAuth providers. Update the auth configuration in `src/server/auth/server.ts`:
 
 ```typescript
 export const auth = betterAuth({
     // Existing config
-    oauth: {
-        providers: [
-            {
-                id: 'github',
-                name: 'GitHub',
-                clientId: process.env.GITHUB_CLIENT_ID!,
-                clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-            },
-            // Add more providers
-        ],
+    socialProviders: {
+        github: {
+            clientId: process.env.GITHUB_CLIENT_ID!,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+        },
+        google: {
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        },
+        // Perfect for educational institutions
+        microsoft: {
+            clientId: process.env.MICROSOFT_CLIENT_ID!,
+            clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
+        },
     },
+});
+```
+
+### Adding Two-Factor Authentication
+
+For enhanced security in educational environments:
+
+```typescript
+import { twoFactor } from 'better-auth/plugins';
+
+export const auth = betterAuth({
+    // Existing config
+    plugins: [
+        nextCookies(),
+        admin({
+            defaultRole: 'user',
+            impersonationSessionDuration: 60 * 60 * 24,
+        }),
+        twoFactor({
+            issuer: 'ISTE Platform',
+        }),
+    ],
+});
+```
+
+### Adding Organization Support
+
+For multi-institutional support:
+
+```typescript
+import { organization } from 'better-auth/plugins';
+
+export const auth = betterAuth({
+    // Existing config
+    plugins: [
+        nextCookies(),
+        admin({
+            defaultRole: 'user',
+            impersonationSessionDuration: 60 * 60 * 24,
+        }),
+        organization({
+            allowUserToCreateOrganization: false, // Only admins can create institutions
+            organizationLimit: 1, // Users can belong to one institution
+        }),
+    ],
 });
 ```
 
@@ -677,8 +893,29 @@ src/server/jobs/
 
 3. Implement job processing with Redis as the backend
 
+### Date Handling and Hydration
+
+To prevent hydration mismatches, the project includes a date utility library:
+
+```typescript
+// src/lib/date-utils.ts
+import { formatDate, formatDeadline } from '@/lib/date-utils';
+
+// Consistent date formatting
+const formattedDate = formatDeadline('2024-12-31'); // "Dec 31, 2024"
+```
+
+#### Best Practices for Date Handling
+
+1. **Always use the date utilities** for consistent formatting
+2. **Avoid `toLocaleDateString()` without locale** to prevent hydration issues
+3. **Use ISO date strings** for data storage and API communication
+4. **Format dates on the client side** for display purposes
+
 ## Conclusion
 
 This documentation provides a comprehensive overview of the rstart project structure, features, and best practices. The project combines modern technologies with an opinionated setup to provide a robust foundation for full-stack web application development.
+
+The award creation system demonstrates advanced form handling, dynamic field generation, and proper hydration handling for a production-ready application.
 
 For questions or improvements to this documentation, please contribute to the project repository.
