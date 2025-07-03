@@ -35,17 +35,13 @@ export default function CustomFieldFormBuilderPreview({
         (a, b) => a.order - b.order,
     );
 
+    // If no questions, don't render anything
+    if (!sortedQuestions.length) {
+        return null;
+    }
+
     return (
         <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    {/* <CardTitle>{form.title || "Untitled Form"}</CardTitle>
-          {form.description && (
-            <CardDescription>{form.description}</CardDescription>
-          )} */}
-                </CardHeader>
-            </Card>
-
             {sortedQuestions.map((question, qIdx) => (
                 <Card key={qIdx}>
                     <CardContent className="pt-6">

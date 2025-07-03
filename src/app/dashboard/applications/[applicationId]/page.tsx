@@ -27,12 +27,25 @@ import {
 } from 'lucide-react';
 import { trpc } from '@/providers/trpc-provider';
 import { formatDeadline } from '@/lib/date-utils';
+import {
+    ApplicationFormData,
+    isApplicationFormData,
+    getFormDataProperty,
+} from '@/types/application-types';
 import Link from 'next/link';
 
 const ApplicationDetailPage = () => {
     const params = useParams();
     const router = useRouter();
     const applicationId = parseInt(params.applicationId as string);
+
+    // Helper function to safely access form data
+    const getFormData = (application: any): ApplicationFormData => {
+        if (isApplicationFormData(application?.formData)) {
+            return application.formData;
+        }
+        return {};
+    };
 
     const [alerts, setAlerts] = useState<
         Array<{
@@ -436,35 +449,573 @@ const ApplicationDetailPage = () => {
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        <h2 className="text-2xl font-bold text-gray-900">
-                            Your Responses
-                        </h2>
+                    {/* Personal Information */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <User className="h-5 w-5" />
+                                Personal Information
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {(() => {
+                                const formData = getFormData(application);
+                                return (
+                                    <>
+                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                            <div>
+                                                <label className="text-sm font-medium text-gray-600">
+                                                    Full Name
+                                                </label>
+                                                <p className="text-gray-900">
+                                                    {formData.applicantName ||
+                                                        'Not provided'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <label className="text-sm font-medium text-gray-600">
+                                                    Designation
+                                                </label>
+                                                <p className="text-gray-900">
+                                                    {formData.designation ||
+                                                        'Not provided'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <label className="text-sm font-medium text-gray-600">
+                                                    Phone Number
+                                                </label>
+                                                <p className="text-gray-900">
+                                                    {formData.phoneNumber ||
+                                                        'Not provided'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <label className="text-sm font-medium text-gray-600">
+                                                    Date of Birth
+                                                </label>
+                                                <p className="text-gray-900">
+                                                    {formData.dateOfBirth
+                                                        ? new Date(
+                                                              formData.dateOfBirth,
+                                                          ).toLocaleDateString()
+                                                        : 'Not provided'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-600">
+                                                Address
+                                            </label>
+                                            <p className="whitespace-pre-wrap text-gray-900">
+                                                {formData.address ||
+                                                    'Not provided'}
+                                            </p>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                            <div>
+                                                <label className="text-sm font-medium text-gray-600">
+                                                    Academic Qualification
+                                                </label>
+                                                <p className="text-gray-900">
+                                                    {formData.academicQualification ||
+                                                        'Not provided'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <label className="text-sm font-medium text-gray-600">
+                                                    Field of Specialization
+                                                </label>
+                                                <p className="text-gray-900">
+                                                    {formData.fieldOfSpecialization ||
+                                                        'Not provided'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </CardContent>
+                    </Card>
 
-                        {application.customFields &&
-                        Array.isArray(application.customFields) &&
-                        application.customFields.length > 0 ? (
-                            <div className="space-y-4">
-                                {application.customFields
-                                    .sort((a: any, b: any) => a.order - b.order)
-                                    .map((field: any) =>
-                                        renderFormField(
-                                            field,
-                                            application.formData,
+                    {/* Professional Information */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Trophy className="h-5 w-5" />
+                                Professional Information
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div>
+                                    <label className="text-sm font-medium text-gray-600">
+                                        Department
+                                    </label>
+                                    <p className="text-gray-900">
+                                        {(application.formData as any)
+                                            ?.department || 'Not provided'}
+                                    </p>
+                                </div>
+                                {application.awardCategory === 'student' && (
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-600">
+                                            Semester/Year
+                                        </label>
+                                        <p className="text-gray-900">
+                                            {(application.formData as any)
+                                                ?.semesterYear ||
+                                                'Not provided'}
+                                        </p>
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="text-sm font-medium text-gray-600">
+                                        ISTE Member
+                                    </label>
+                                    <p className="text-gray-900">
+                                        {(application.formData as any)?.isMember
+                                            ? 'Yes'
+                                            : 'No'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {application.awardCategory === 'faculty' &&
+                                (application.formData as any)
+                                    ?.teachingExperience && (
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-600">
+                                            Teaching Experience
+                                        </label>
+                                        <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2">
+                                            <div className="rounded bg-gray-50 p-3">
+                                                <p className="text-sm text-gray-600">
+                                                    UG Level
+                                                </p>
+                                                <p className="font-medium">
+                                                    {(
+                                                        application.formData as any
+                                                    ).teachingExperience.ug ||
+                                                        '0'}{' '}
+                                                    years
+                                                </p>
+                                            </div>
+                                            <div className="rounded bg-gray-50 p-3">
+                                                <p className="text-sm text-gray-600">
+                                                    PG Level
+                                                </p>
+                                                <p className="font-medium">
+                                                    {(
+                                                        application.formData as any
+                                                    ).teachingExperience.pg ||
+                                                        '0'}{' '}
+                                                    years
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                            {application.awardCategory === 'faculty' && (
+                                <>
+                                    {(application.formData as any)
+                                        ?.industryExperience && (
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-600">
+                                                Industry Experience
+                                            </label>
+                                            <p className="text-gray-900">
+                                                {
+                                                    (
+                                                        application.formData as any
+                                                    ).industryExperience
+                                                }
+                                            </p>
+                                        </div>
+                                    )}
+                                    {(application.formData as any)
+                                        ?.otherExperience && (
+                                        <div>
+                                            <label className="text-sm font-medium text-gray-600">
+                                                Other Experience
+                                            </label>
+                                            <p className="whitespace-pre-wrap text-gray-900">
+                                                {
+                                                    (
+                                                        application.formData as any
+                                                    ).otherExperience
+                                                }
+                                            </p>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            <div>
+                                <label className="text-sm font-medium text-gray-600">
+                                    Institution Address
+                                </label>
+                                <p className="whitespace-pre-wrap text-gray-900">
+                                    {(application.formData as any)
+                                        ?.institutionAddress || 'Not provided'}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Project Information */}
+                    {(application.formData as any)?.projects &&
+                        Array.isArray((application.formData as any).projects) &&
+                        (application.formData as any).projects.length > 0 && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <FileText className="h-5 w-5" />
+                                        Project Information
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    {(application.formData as any).projects.map(
+                                        (
+                                            project: any,
+                                            projectIndex: number,
+                                        ) => (
+                                            <div
+                                                key={projectIndex}
+                                                className="rounded-lg border border-gray-200 p-6"
+                                            >
+                                                <h4 className="mb-4 text-lg font-semibold">
+                                                    Project {projectIndex + 1}
+                                                </h4>
+
+                                                {/* Project Title */}
+                                                <div className="mb-4">
+                                                    <label className="text-sm font-medium text-gray-600">
+                                                        Project Title
+                                                    </label>
+                                                    <p className="text-gray-900">
+                                                        {project.title ||
+                                                            'Not provided'}
+                                                    </p>
+                                                </div>
+
+                                                {/* Outstanding Work Area */}
+                                                <div className="mb-4">
+                                                    <label className="text-sm font-medium text-gray-600">
+                                                        Outstanding Work Area
+                                                    </label>
+                                                    <p className="text-gray-900">
+                                                        {project.outstandingWorkArea ===
+                                                            'rural-development' &&
+                                                            'Rural-oriented & society relevant development activity'}
+                                                        {project.outstandingWorkArea ===
+                                                            'industry-interaction' &&
+                                                            'Interaction with industry'}
+                                                        {project.outstandingWorkArea ===
+                                                            'educational-technology' &&
+                                                            'Educational Technology & Book Writing including Laboratory Manual'}
+                                                        {!project.outstandingWorkArea &&
+                                                            'Not provided'}
+                                                    </p>
+                                                </div>
+
+                                                {/* Brief Resume */}
+                                                <div className="mb-4">
+                                                    <label className="text-sm font-medium text-gray-600">
+                                                        Brief Resume of the
+                                                        Project
+                                                    </label>
+                                                    {project.briefResume && (
+                                                        <div className="mt-2 rounded bg-gray-50 p-3 whitespace-pre-wrap">
+                                                            {
+                                                                project.briefResume
+                                                            }
+                                                        </div>
+                                                    )}
+                                                    {project.briefResumeFile && (
+                                                        <div className="mt-2 flex items-center gap-2">
+                                                            <FileText className="h-4 w-4 text-blue-600" />
+                                                            <span className="text-blue-600">
+                                                                {
+                                                                    project
+                                                                        .briefResumeFile
+                                                                        .filename
+                                                                }
+                                                            </span>
+                                                            <button
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        const response =
+                                                                            await fetch(
+                                                                                `/api/files/${project.briefResumeFile.id}`,
+                                                                            );
+                                                                        if (
+                                                                            !response.ok
+                                                                        )
+                                                                            throw new Error(
+                                                                                'Download failed',
+                                                                            );
+                                                                        const blob =
+                                                                            await response.blob();
+                                                                        const url =
+                                                                            URL.createObjectURL(
+                                                                                blob,
+                                                                            );
+                                                                        const a =
+                                                                            document.createElement(
+                                                                                'a',
+                                                                            );
+                                                                        a.href =
+                                                                            url;
+                                                                        a.download =
+                                                                            project.briefResumeFile.filename;
+                                                                        document.body.appendChild(
+                                                                            a,
+                                                                        );
+                                                                        a.click();
+                                                                        document.body.removeChild(
+                                                                            a,
+                                                                        );
+                                                                        URL.revokeObjectURL(
+                                                                            url,
+                                                                        );
+                                                                    } catch (error) {
+                                                                        addAlert(
+                                                                            'error',
+                                                                            'Download Failed',
+                                                                            'Failed to download file.',
+                                                                        );
+                                                                    }
+                                                                }}
+                                                                className="text-sm text-blue-600 underline hover:text-blue-800"
+                                                            >
+                                                                Download
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                    {!project.briefResume &&
+                                                        !project.briefResumeFile && (
+                                                            <p className="mt-2 text-gray-500">
+                                                                Not provided
+                                                            </p>
+                                                        )}
+                                                </div>
+
+                                                {/* Institution Remarks */}
+                                                {project.institutionRemarks && (
+                                                    <div className="mb-4">
+                                                        <label className="text-sm font-medium text-gray-600">
+                                                            Institution Remarks
+                                                        </label>
+                                                        <div className="mt-2 flex items-center gap-2">
+                                                            <FileText className="h-4 w-4 text-green-600" />
+                                                            <span className="text-green-600">
+                                                                {
+                                                                    project
+                                                                        .institutionRemarks
+                                                                        .filename
+                                                                }
+                                                            </span>
+                                                            <button
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        const response =
+                                                                            await fetch(
+                                                                                `/api/files/${project.institutionRemarks.id}`,
+                                                                            );
+                                                                        if (
+                                                                            !response.ok
+                                                                        )
+                                                                            throw new Error(
+                                                                                'Download failed',
+                                                                            );
+                                                                        const blob =
+                                                                            await response.blob();
+                                                                        const url =
+                                                                            URL.createObjectURL(
+                                                                                blob,
+                                                                            );
+                                                                        const a =
+                                                                            document.createElement(
+                                                                                'a',
+                                                                            );
+                                                                        a.href =
+                                                                            url;
+                                                                        a.download =
+                                                                            project.institutionRemarks.filename;
+                                                                        document.body.appendChild(
+                                                                            a,
+                                                                        );
+                                                                        a.click();
+                                                                        document.body.removeChild(
+                                                                            a,
+                                                                        );
+                                                                        URL.revokeObjectURL(
+                                                                            url,
+                                                                        );
+                                                                    } catch (error) {
+                                                                        addAlert(
+                                                                            'error',
+                                                                            'Download Failed',
+                                                                            'Failed to download file.',
+                                                                        );
+                                                                    }
+                                                                }}
+                                                                className="text-sm text-green-600 underline hover:text-green-800"
+                                                            >
+                                                                Download
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Benefits */}
+                                                {project.benefits &&
+                                                    Array.isArray(
+                                                        project.benefits,
+                                                    ) &&
+                                                    project.benefits.some(
+                                                        (benefit: string) =>
+                                                            benefit,
+                                                    ) && (
+                                                        <div className="mb-4">
+                                                            <label className="text-sm font-medium text-gray-600">
+                                                                Benefits/Contributions
+                                                            </label>
+                                                            <div className="mt-2 space-y-2">
+                                                                {project.benefits.map(
+                                                                    (
+                                                                        benefit: string,
+                                                                        benefitIndex: number,
+                                                                    ) =>
+                                                                        benefit && (
+                                                                            <div
+                                                                                key={
+                                                                                    benefitIndex
+                                                                                }
+                                                                                className="rounded bg-gray-50 p-3"
+                                                                            >
+                                                                                <p className="text-sm text-gray-600">
+                                                                                    Benefit{' '}
+                                                                                    {benefitIndex +
+                                                                                        1}
+                                                                                </p>
+                                                                                <p className="text-gray-900">
+                                                                                    {
+                                                                                        benefit
+                                                                                    }
+                                                                                </p>
+                                                                            </div>
+                                                                        ),
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                {/* Guides */}
+                                                {project.guides &&
+                                                    Array.isArray(
+                                                        project.guides,
+                                                    ) &&
+                                                    project.guides.length >
+                                                        0 && (
+                                                        <div className="mb-4">
+                                                            <label className="text-sm font-medium text-gray-600">
+                                                                Guide(s)
+                                                                Information
+                                                            </label>
+                                                            <div className="mt-2 space-y-3">
+                                                                {project.guides.map(
+                                                                    (
+                                                                        guide: any,
+                                                                        guideIndex: number,
+                                                                    ) => (
+                                                                        <div
+                                                                            key={
+                                                                                guideIndex
+                                                                            }
+                                                                            className="rounded border bg-gray-50 p-4"
+                                                                        >
+                                                                            <h5 className="mb-2 font-medium">
+                                                                                Guide{' '}
+                                                                                {guideIndex +
+                                                                                    1}
+                                                                            </h5>
+                                                                            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                                                                                <div>
+                                                                                    <p className="text-xs text-gray-600">
+                                                                                        Name
+                                                                                    </p>
+                                                                                    <p className="text-sm">
+                                                                                        {guide.name ||
+                                                                                            'Not provided'}
+                                                                                    </p>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <p className="text-xs text-gray-600">
+                                                                                        Email
+                                                                                    </p>
+                                                                                    <p className="text-sm">
+                                                                                        {guide.email ||
+                                                                                            'Not provided'}
+                                                                                    </p>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <p className="text-xs text-gray-600">
+                                                                                        Mobile
+                                                                                    </p>
+                                                                                    <p className="text-sm">
+                                                                                        {guide.mobile ||
+                                                                                            'Not provided'}
+                                                                                    </p>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <p className="text-xs text-gray-600">
+                                                                                        Address
+                                                                                    </p>
+                                                                                    <p className="text-sm">
+                                                                                        {guide.address ||
+                                                                                            'Not provided'}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                            </div>
                                         ),
                                     )}
-                            </div>
-                        ) : (
-                            <Card>
-                                <CardContent className="pt-6">
-                                    <p className="text-center text-gray-500">
-                                        No form fields were configured for this
-                                        award.
-                                    </p>
                                 </CardContent>
                             </Card>
                         )}
-                    </div>
+
+                    {/* Custom Form Responses */}
+                    {application.customFields &&
+                        Array.isArray(application.customFields) &&
+                        application.customFields.length > 0 && (
+                            <div className="space-y-4">
+                                <h2 className="text-2xl font-bold text-gray-900">
+                                    Additional Questions & Responses
+                                </h2>
+                                <div className="space-y-4">
+                                    {application.customFields
+                                        .sort(
+                                            (a: any, b: any) =>
+                                                a.order - b.order,
+                                        )
+                                        .map((field: any) =>
+                                            renderFormField(
+                                                field,
+                                                application.formData,
+                                            ),
+                                        )}
+                                </div>
+                            </div>
+                        )}
 
                     {/* Status Information */}
                     <Card>

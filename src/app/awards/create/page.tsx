@@ -30,17 +30,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Trophy,
     Save,
     Eye,
     Settings,
     Plus,
-    Calendar,
-    Users,
-    GraduationCap,
-    Building,
     CheckCircle,
     AlertCircle,
     X,
@@ -57,16 +52,16 @@ interface AwardFormData {
     description: string;
     category: 'student' | 'faculty' | 'institution';
 
+    // Deadlines
+    submissionDeadline: string;
+    evaluationDeadline: string;
+    resultDeadline: string;
+
     // Eligibility Criteria
     eligibilityLevel: string[];
     eligibilityStates: string[];
     eligibilityBranches: string[];
     maxAge?: number;
-
-    // Deadlines
-    submissionDeadline: string;
-    evaluationDeadline: string;
-    resultDeadline: string;
 
     // Special Requirements
     specialRequirements: string[];
@@ -78,7 +73,7 @@ interface AwardFormData {
 const CreateAwardPage = () => {
     const router = useRouter();
     const [currentStep, setCurrentStep] = useState<
-        'basic' | 'eligibility' | 'form' | 'preview'
+        'basic' | 'form' | 'preview'
     >('basic');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -105,11 +100,11 @@ const CreateAwardPage = () => {
     ) => {
         const id = Date.now().toString();
         setAlerts((prev) => [...prev, { id, type, title, message }]);
-        // Auto-remove after 5 seconds for success/info alerts
+        // Auto-remove after 8 seconds for success/info alerts
         if (type === 'success' || type === 'info') {
             setTimeout(() => {
                 setAlerts((prev) => prev.filter((alert) => alert.id !== id));
-            }, 5000);
+            }, 8000);
         }
     };
 
@@ -121,15 +116,33 @@ const CreateAwardPage = () => {
         name: '',
         description: '',
         category: 'student',
-        eligibilityLevel: [],
-        eligibilityStates: [],
-        eligibilityBranches: [],
         submissionDeadline: '',
         evaluationDeadline: '',
         resultDeadline: '',
+        eligibilityLevel: [],
+        eligibilityStates: [],
+        eligibilityBranches: [],
         specialRequirements: [],
         customFields: [],
     });
+
+    // Function to ensure all form fields have proper default values
+    const normalizeFormData = (data: Partial<AwardFormData>): AwardFormData => {
+        return {
+            name: data.name || '',
+            description: data.description || '',
+            category: data.category || 'student',
+            submissionDeadline: data.submissionDeadline || '',
+            evaluationDeadline: data.evaluationDeadline || '',
+            resultDeadline: data.resultDeadline || '',
+            eligibilityLevel: data.eligibilityLevel || [],
+            eligibilityStates: data.eligibilityStates || [],
+            eligibilityBranches: data.eligibilityBranches || [],
+            maxAge: data.maxAge,
+            specialRequirements: data.specialRequirements || [],
+            customFields: data.customFields || [],
+        };
+    };
 
     // Load draft on component mount
     React.useEffect(() => {
@@ -137,7 +150,8 @@ const CreateAwardPage = () => {
         if (savedDraft) {
             try {
                 const parsedDraft = JSON.parse(savedDraft);
-                setFormData(parsedDraft);
+                const normalizedData = normalizeFormData(parsedDraft);
+                setFormData(normalizedData);
                 setDraftLoaded(true);
                 console.log('Loaded draft from localStorage');
             } catch (error) {
@@ -284,15 +298,21 @@ const CreateAwardPage = () => {
         }
 
         // Check required fields
-        if (
-            !formData.name ||
-            !formData.description ||
-            !formData.submissionDeadline
-        ) {
+        const requiredFields = [
+            { field: formData.name, name: 'Award Name' },
+            { field: formData.description, name: 'Description' },
+            { field: formData.submissionDeadline, name: 'Submission Deadline' },
+        ];
+
+        const missingFields = requiredFields
+            .filter(({ field }) => !field)
+            .map(({ name }) => name);
+
+        if (missingFields.length > 0) {
             addAlert(
                 'error',
                 'Required Fields Missing',
-                'Please fill in all required fields (Name, Description, and Submission Deadline).',
+                `Please fill in the following required fields: ${missingFields.join(', ')}.`,
             );
             return;
         }
@@ -356,36 +376,27 @@ const CreateAwardPage = () => {
 
     const confirmClearDraft = () => {
         localStorage.removeItem('award-draft');
-        setFormData({
-            name: '',
-            description: '',
-            category: 'student',
-            eligibilityLevel: [],
-            eligibilityStates: [],
-            eligibilityBranches: [],
-            submissionDeadline: '',
-            evaluationDeadline: '',
-            resultDeadline: '',
-            specialRequirements: [],
-            customFields: [],
-        });
+        const initialData = normalizeFormData({});
+        setFormData(initialData);
         setDraftLoaded(false);
         setCurrentStep('basic');
         setShowClearDraftDialog(false);
         addAlert('success', 'Draft Cleared', 'Draft cleared successfully!');
     };
 
-    // Basic Information Step
+    // Basic Award Information Step
     const renderBasicStep = () => (
         <div className="space-y-6">
+            {/* Award Information */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Trophy className="h-5 w-5" />
-                        Basic Award Information
+                        Award Configuration
                     </CardTitle>
                     <CardDescription>
-                        Define the basic details of your award
+                        Configure the basic details and requirements for this
+                        award
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -538,18 +549,11 @@ const CreateAwardPage = () => {
                     </div>
                 </CardContent>
             </Card>
-        </div>
-    );
 
-    // Eligibility Criteria Step
-    const renderEligibilityStep = () => (
-        <div className="space-y-6">
+            {/* Eligibility Criteria */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Users className="h-5 w-5" />
-                        Eligibility Criteria
-                    </CardTitle>
+                    <CardTitle>Eligibility Criteria</CardTitle>
                     <CardDescription>
                         Define who can apply for this award
                     </CardDescription>
@@ -598,7 +602,7 @@ const CreateAwardPage = () => {
                         <Input
                             id="max-age"
                             type="number"
-                            value={formData.maxAge || ''}
+                            value={formData.maxAge?.toString() || ''}
                             onChange={(e) =>
                                 updateFormData(
                                     'maxAge',
@@ -617,7 +621,7 @@ const CreateAwardPage = () => {
                             {formData.specialRequirements.map((req, index) => (
                                 <div key={index} className="flex gap-2">
                                     <Input
-                                        value={req}
+                                        value={req || ''}
                                         onChange={(e) =>
                                             updateSpecialRequirement(
                                                 index,
@@ -651,6 +655,62 @@ const CreateAwardPage = () => {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Standard Application Fields Info */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Standard Application Fields</CardTitle>
+                    <CardDescription>
+                        These fields will automatically be included in the
+                        application form
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                        <h5 className="mb-3 font-medium text-blue-800">
+                            Applicants will be required to provide:
+                        </h5>
+                        <ul className="space-y-2 text-sm text-blue-700">
+                            <li>
+                                • Personal Information (Name, Address, Contact
+                                Details, Date of Birth)
+                            </li>
+                            <li>
+                                • Academic Qualifications and Field of
+                                Specialization
+                            </li>
+                            <li>
+                                • Professional Details (Department, Designation,
+                                Institution Address)
+                            </li>
+                            <li>
+                                • Project Information (Title, Guide Details,
+                                Brief Resume, Benefits)
+                            </li>
+                            <li>
+                                • Required Documents (Project Reports,
+                                Institution Remarks)
+                            </li>
+                            <li>• ISTE Membership Status</li>
+                            {formData.category === 'student' && (
+                                <li>• Semester/Year Information</li>
+                            )}
+                            {formData.category === 'faculty' && (
+                                <li>• Teaching Experience (UG/PG levels)</li>
+                            )}
+                            {formData.category === 'faculty' && (
+                                <li>
+                                    • Industry Experience and Other Achievements
+                                </li>
+                            )}
+                        </ul>
+                        <p className="mt-3 text-xs text-blue-600">
+                            Note: Use the Form Builder to add any additional
+                            custom questions specific to this award
+                        </p>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 
@@ -661,11 +721,11 @@ const CreateAwardPage = () => {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Settings className="h-5 w-5" />
-                        Application Form Builder
+                        Custom Application Form Builder
                     </CardTitle>
                     <CardDescription>
-                        Design the application form that applicants will fill
-                        out
+                        Add custom questions specific to this award (in addition
+                        to the standard fields)
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -690,47 +750,90 @@ const CreateAwardPage = () => {
                         Award Preview
                     </CardTitle>
                     <CardDescription>
-                        Review your award before publishing
+                        Review your award configuration before publishing
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {/* Award Summary */}
-                    <div className="rounded-lg bg-gray-50 p-4">
-                        <h3 className="mb-2 text-lg font-semibold">
+                    <div className="rounded-lg bg-gray-50 p-6">
+                        <h3 className="mb-2 text-xl font-semibold">
                             {formData.name}
                         </h3>
-                        <p className="mb-4 text-gray-600">
+                        <p className="mb-6 text-gray-600">
                             {formData.description}
                         </p>
 
-                        <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
-                            <div>
-                                <span className="font-medium">Category:</span>
-                                <Badge variant="outline" className="ml-2">
-                                    {formData.category}
-                                </Badge>
-                            </div>
-                            <div>
-                                <span className="font-medium">Levels:</span>
-                                <span className="ml-2">
-                                    {formData.eligibilityLevel.join(', ') ||
-                                        'All'}
-                                </span>
-                            </div>
-                            <div>
-                                <span className="font-medium">Deadline:</span>
-                                <span className="ml-2">
-                                    {formData.submissionDeadline}
-                                </span>
+                        {/* Award Details */}
+                        <div className="mb-6">
+                            <h4 className="mb-3 text-lg font-medium">
+                                Award Details
+                            </h4>
+                            <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2 lg:grid-cols-3">
+                                <div>
+                                    <span className="font-medium">
+                                        Category:
+                                    </span>
+                                    <Badge variant="outline" className="ml-2">
+                                        {formData.category}
+                                    </Badge>
+                                </div>
+                                <div>
+                                    <span className="font-medium">
+                                        Submission Deadline:
+                                    </span>
+                                    <span className="ml-2">
+                                        {formData.submissionDeadline}
+                                    </span>
+                                </div>
+                                {formData.evaluationDeadline && (
+                                    <div>
+                                        <span className="font-medium">
+                                            Evaluation Deadline:
+                                        </span>
+                                        <span className="ml-2">
+                                            {formData.evaluationDeadline}
+                                        </span>
+                                    </div>
+                                )}
+                                {formData.resultDeadline && (
+                                    <div>
+                                        <span className="font-medium">
+                                            Result Announcement:
+                                        </span>
+                                        <span className="ml-2">
+                                            {formData.resultDeadline}
+                                        </span>
+                                    </div>
+                                )}
+                                <div>
+                                    <span className="font-medium">
+                                        Eligibility Levels:
+                                    </span>
+                                    <span className="ml-2">
+                                        {formData.eligibilityLevel.join(', ') ||
+                                            'All'}
+                                    </span>
+                                </div>
+                                {formData.maxAge && (
+                                    <div>
+                                        <span className="font-medium">
+                                            Maximum Age:
+                                        </span>
+                                        <span className="ml-2">
+                                            {formData.maxAge} years
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
+                        {/* Special Requirements */}
                         {formData.specialRequirements.length > 0 && (
-                            <div className="mt-4">
-                                <span className="font-medium">
-                                    Special Requirements:
-                                </span>
-                                <ul className="mt-2 list-inside list-disc text-sm text-gray-600">
+                            <div className="mb-6">
+                                <h4 className="mb-3 text-lg font-medium">
+                                    Special Requirements
+                                </h4>
+                                <ul className="list-inside list-disc text-sm text-gray-600">
                                     {formData.specialRequirements.map(
                                         (req, index) => (
                                             <li key={index}>{req}</li>
@@ -739,25 +842,56 @@ const CreateAwardPage = () => {
                                 </ul>
                             </div>
                         )}
+
+                        {/* Standard Fields Info */}
+                        <div className="mb-6">
+                            <h4 className="mb-3 text-lg font-medium">
+                                Standard Application Fields
+                            </h4>
+                            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                                <p className="mb-2 text-sm text-blue-700">
+                                    All applicants will be required to provide:
+                                </p>
+                                <ul className="space-y-1 text-sm text-blue-700">
+                                    <li>
+                                        • Personal Information & Contact Details
+                                    </li>
+                                    <li>
+                                        • Academic Qualifications &
+                                        Specialization
+                                    </li>
+                                    <li>
+                                        • Professional Details & Institution
+                                        Information
+                                    </li>
+                                    <li>
+                                        • Project Information & Documentation
+                                    </li>
+                                    <li>• ISTE Membership Status</li>
+                                    {formData.category === 'student' && (
+                                        <li>• Academic Year/Semester</li>
+                                    )}
+                                    {formData.category === 'faculty' && (
+                                        <li>
+                                            • Teaching & Industry Experience
+                                        </li>
+                                    )}
+                                </ul>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Form Preview */}
-                    <div>
-                        <h4 className="mb-4 text-lg font-semibold">
-                            Application Form Preview
-                        </h4>
-                        <CustomFieldFormBuilderPreview
-                            form={{ questions: formData.customFields }}
-                        />
-                    </div>
+                    {/* Custom Form Preview */}
+                    <CustomFieldFormBuilderPreview
+                        form={{ questions: formData.customFields }}
+                    />
                 </CardContent>
             </Card>
         </div>
     );
 
     const steps = [
-        { id: 'basic', label: 'Basic Info', icon: Trophy },
-        { id: 'eligibility', label: 'Eligibility', icon: Users },
+        { id: 'basic', label: 'Award Info', icon: Trophy },
         { id: 'form', label: 'Form Builder', icon: Settings },
         { id: 'preview', label: 'Preview', icon: Eye },
     ];
@@ -771,7 +905,7 @@ const CreateAwardPage = () => {
                         Create New Award
                     </h1>
                     <p className="mt-2 text-gray-600">
-                        Design a new award with custom application form and
+                        Configure a new award with custom application form and
                         eligibility criteria
                     </p>
 
@@ -895,7 +1029,6 @@ const CreateAwardPage = () => {
                 {/* Step Content */}
                 <div className="mb-8">
                     {currentStep === 'basic' && renderBasicStep()}
-                    {currentStep === 'eligibility' && renderEligibilityStep()}
                     {currentStep === 'form' && renderFormStep()}
                     {currentStep === 'preview' && renderPreviewStep()}
                 </div>
@@ -945,15 +1078,30 @@ const CreateAwardPage = () => {
                                 onClick={() => {
                                     // Validate current step before proceeding
                                     if (currentStep === 'basic') {
-                                        if (
-                                            !formData.name ||
-                                            !formData.description ||
-                                            !formData.submissionDeadline
-                                        ) {
+                                        const requiredFields = [
+                                            {
+                                                field: formData.name,
+                                                name: 'Award Name',
+                                            },
+                                            {
+                                                field: formData.description,
+                                                name: 'Description',
+                                            },
+                                            {
+                                                field: formData.submissionDeadline,
+                                                name: 'Submission Deadline',
+                                            },
+                                        ];
+
+                                        const missingFields = requiredFields
+                                            .filter(({ field }) => !field)
+                                            .map(({ name }) => name);
+
+                                        if (missingFields.length > 0) {
                                             addAlert(
                                                 'error',
                                                 'Required Fields Missing',
-                                                'Please fill in all required fields before proceeding.',
+                                                `Please fill in the following required fields: ${missingFields.join(', ')}.`,
                                             );
                                             return;
                                         }

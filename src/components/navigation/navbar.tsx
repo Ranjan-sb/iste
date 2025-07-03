@@ -52,6 +52,23 @@ export default function Navbar({ variant = 'auto' }: NavbarProps) {
         enabled: effectiveVariant === 'dashboard',
     });
 
+    // Close user menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                userMenuRef.current &&
+                !userMenuRef.current.contains(event.target as Node)
+            ) {
+                setIsUserMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
     // Hide navbar on auth pages
     if (pathname?.startsWith('/auth/')) {
         return null;
@@ -124,23 +141,6 @@ export default function Navbar({ variant = 'auto' }: NavbarProps) {
 
     const userRole = roles?.find((role) => role.id === profile?.roleId);
     const roleName = userRole?.name || 'User';
-
-    // Close user menu when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                userMenuRef.current &&
-                !userMenuRef.current.contains(event.target as Node)
-            ) {
-                setIsUserMenuOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
 
     // Generate user initials
     const getUserInitials = (name: string | undefined) => {

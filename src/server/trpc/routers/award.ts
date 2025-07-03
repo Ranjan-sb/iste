@@ -5,7 +5,7 @@ import { eq, desc } from 'drizzle-orm';
 import { getUserSession } from '@/server/auth/server';
 import { router, publicProcedure, getAuthenticatedSession } from '../lib';
 
-// Award input schemas
+// Award input schemas - simplified for award creation (configuration only)
 const CreateAwardInput = z.object({
     name: z.string().min(1),
     description: z.string().min(1),
