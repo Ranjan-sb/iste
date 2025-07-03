@@ -119,7 +119,9 @@ export const awardEvaluations = pgTable('award_evaluations', {
 export const files = pgTable('files', {
     id: serial('id').primaryKey(),
     filename: text('filename').notNull(), // Original filename
-    storedFilename: text('stored_filename').notNull(), // Unique filename on disk
+    r2Key: text('r2_key').notNull(), // R2 storage key
+    r2Url: text('r2_url').notNull(), // R2 storage URL
+    publicUrl: text('public_url'), // Public URL if custom domain is configured
     mimetype: text('mimetype').notNull(),
     size: integer('size').notNull(), // File size in bytes
     uploadedBy: text('uploaded_by')

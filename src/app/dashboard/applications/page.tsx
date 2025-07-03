@@ -365,7 +365,7 @@ const ApplicationsPage = () => {
                 </div>
 
                 {/* Call to Action */}
-                <div className="mt-12 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-center text-white">
+                {/* <div className="mt-12 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-center text-white">
                     <h3 className="text-2xl font-bold">Keep Applying!</h3>
                     <p className="mt-2 text-blue-100">
                         Don't miss out on new award opportunities. Check back
@@ -377,7 +377,7 @@ const ApplicationsPage = () => {
                             Explore More Awards
                         </Button>
                     </Link>
-                </div>
+                </div> */}
             </div>
         </div>
     );

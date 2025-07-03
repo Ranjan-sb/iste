@@ -9,6 +9,12 @@ const serverSchema = z.object({
     DATABASE_URL: z.string().url(),
     RESEND_API_KEY: z.string().optional(),
     NEXT_PUBLIC_APP_URL: z.string().url(),
+    // Cloudflare R2 Storage
+    R2_ACCESS_KEY_ID: z.string().min(1),
+    R2_SECRET_ACCESS_KEY: z.string().min(1),
+    R2_BUCKET_NAME: z.string().min(1),
+    R2_PUBLIC_URL: z.string().url().optional(), // Optional custom domain for public access
+    R2_ENDPOINT: z.string().url().optional(), // Optional custom R2 endpoint
     // Example:
     // NEXTAUTH_SECRET: z.string().min(1),
 });
@@ -23,7 +29,7 @@ const clientSchema = z.object({
     // NEXT_PUBLIC_API_URL: z.string().url(),
 });
 
-function getServerEnv() {
+export function getServerEnv() {
     const parsed = serverSchema.safeParse(process.env);
     if (!parsed.success) {
         console.error(

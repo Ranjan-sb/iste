@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserSession } from '@/server/auth/server';
 import { db } from '@/server/db';
 import { files } from '@/server/db/schema';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { randomUUID } from 'crypto';
+import { uploadFile, validateFile } from '@/lib/file-storage';
 
 export async function POST(request: NextRequest) {
     try {
@@ -30,62 +28,67 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Validate file size (10MB limit)
-        if (file.size > 10 * 1024 * 1024) {
+        // Validate file
+        const validation = validateFile(file, {
+            maxSize: 10 * 1024 * 1024, // 10MB
+            allowedTypes: [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ],
+        });
+        if (!validation.valid) {
             return NextResponse.json(
-                { error: 'File too large. Maximum size is 10MB.' },
+                { error: validation.error },
                 { status: 400 },
             );
         }
 
-        // Validate file type
-        const allowedTypes = [
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        ];
+        // Convert file to buffer
+        const buffer = await file.arrayBuffer();
+        const fileBuffer = Buffer.from(buffer);
 
-        if (!allowedTypes.includes(file.type)) {
-            return NextResponse.json(
-                {
-                    error: 'Invalid file type. Only PDF, DOC, and DOCX files are allowed.',
-                },
-                { status: 400 },
-            );
-        }
+        // Upload to R2
+        const uploadResult = await uploadFile(
+            fileBuffer,
+            file.name,
+            file.type,
+            {
+                uploadedBy: session.user.id,
+                applicationId: applicationId
+                    ? parseInt(applicationId)
+                    : undefined,
+                fieldId: fieldId || undefined,
+            },
+        );
 
-        // Create unique filename
-        const fileExtension = file.name.split('.').pop();
-        const storedFilename = `${randomUUID()}.${fileExtension}`;
-
-        // Create upload directory if it doesn't exist
-        const uploadDir = join(process.cwd(), 'uploads');
-        await mkdir(uploadDir, { recursive: true });
-
-        // Save file to disk
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const filePath = join(uploadDir, storedFilename);
-        await writeFile(filePath, buffer);
-
-        // Save file metadata to database
-        const [savedFile] = await db
+        // Store file metadata in database
+        const [dbFile] = await db
             .insert(files)
             .values({
                 filename: file.name,
-                storedFilename,
                 mimetype: file.type,
                 size: file.size,
+                r2Key: uploadResult.key,
+                r2Url: uploadResult.url,
+                publicUrl: uploadResult.publicUrl,
                 uploadedBy: session.user.id,
-                applicationId: applicationId ? parseInt(applicationId) : null,
-                fieldId,
+                applicationId: applicationId
+                    ? parseInt(applicationId)
+                    : undefined,
+                fieldId: fieldId || undefined,
             })
             .returning();
 
         return NextResponse.json({
-            id: savedFile.id,
-            filename: savedFile.filename,
-            size: savedFile.size,
-            mimetype: savedFile.mimetype,
+            success: true,
+            file: {
+                id: dbFile.id,
+                filename: dbFile.filename,
+                size: dbFile.size,
+                url: dbFile.r2Url,
+                publicUrl: dbFile.publicUrl,
+            },
         });
     } catch (error) {
         console.error('File upload error:', error);
