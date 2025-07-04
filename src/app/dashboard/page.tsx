@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { useSession } from '@/server/auth/client';
 import { trpc } from '@/providers/trpc-provider';
+import { formatDeadline } from '@/lib/date-utils';
 
 import {
     User,
@@ -29,12 +30,16 @@ import {
     CheckCircle,
     Clock,
     AlertCircle,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 
 export default function DashboardPage() {
     const { data: session } = useSession();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('overview');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 6;
 
     const { data: profile, error: profileError } =
         trpc.profile.getProfile.useQuery(undefined, {
@@ -42,6 +47,40 @@ export default function DashboardPage() {
             retry: false,
         });
     const { data: roles } = trpc.profile.getRoles.useQuery();
+    const { data: awards } = trpc.award.getAwards.useQuery();
+    const { data: myApplications } =
+        trpc.application.getMyApplications.useQuery();
+
+    // Helper function to get application status for an award
+    const getApplicationStatus = (awardId: number) => {
+        if (!myApplications) return null;
+        return myApplications.find((app) => app.awardId === awardId);
+    };
+
+    // Pagination logic for awards
+    const totalPages = Math.ceil((awards?.length || 0) / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentAwards = awards?.slice(startIndex, endIndex) || [];
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
+
+    const handlePreviousPage = () => {
+        setCurrentPage((prev) => Math.max(1, prev - 1));
+    };
+
+    const handleNextPage = () => {
+        setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+    };
+
+    // Reset to first page when switching to awards tab
+    useEffect(() => {
+        if (activeTab === 'awards') {
+            setCurrentPage(1);
+        }
+    }, [activeTab]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -452,72 +491,364 @@ export default function DashboardPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                                    <Card className="transition-shadow hover:shadow-lg">
-                                        <CardHeader>
-                                            <CardTitle className="text-lg">
-                                                Best Teacher Award
-                                            </CardTitle>
-                                            <CardDescription>
-                                                Recognition for outstanding
-                                                teaching excellence
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="flex items-center justify-between">
-                                                <Badge className="bg-green-100 text-green-800">
-                                                    Open
-                                                </Badge>
-                                                <Button size="sm">
-                                                    Apply Now
-                                                </Button>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-
-                                    <Card className="transition-shadow hover:shadow-lg">
-                                        <CardHeader>
-                                            <CardTitle className="text-lg">
-                                                Research Innovation
-                                            </CardTitle>
-                                            <CardDescription>
-                                                Award for innovative research
-                                                contributions
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="flex items-center justify-between">
-                                                <Badge className="bg-green-100 text-green-800">
-                                                    Open
-                                                </Badge>
-                                                <Button size="sm">
-                                                    Apply Now
-                                                </Button>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-
-                                    <Card className="transition-shadow hover:shadow-lg">
-                                        <CardHeader>
-                                            <CardTitle className="text-lg">
-                                                Student Excellence
-                                            </CardTitle>
-                                            <CardDescription>
-                                                Recognition for outstanding
-                                                student achievements
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="flex items-center justify-between">
-                                                <Badge className="bg-gray-100 text-gray-800">
-                                                    Closed
-                                                </Badge>
-                                                <Button size="sm" disabled>
-                                                    Closed
-                                                </Button>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                    {awards && awards.length > 0 ? (
+                                        currentAwards.map((award) => {
+                                            const isOpen =
+                                                new Date(
+                                                    award.submissionDeadline,
+                                                ) > new Date();
+                                            const applicationStatus =
+                                                getApplicationStatus(award.id);
+                                            return (
+                                                <Card
+                                                    key={award.id}
+                                                    className="transition-shadow hover:shadow-lg"
+                                                >
+                                                    <CardHeader>
+                                                        <div className="flex items-start justify-between">
+                                                            <Award className="h-8 w-8 text-yellow-500" />
+                                                            <div className="flex flex-col gap-2">
+                                                                <Badge
+                                                                    variant={
+                                                                        isOpen
+                                                                            ? 'default'
+                                                                            : 'secondary'
+                                                                    }
+                                                                >
+                                                                    {isOpen
+                                                                        ? 'Open'
+                                                                        : 'Closed'}
+                                                                </Badge>
+                                                                {applicationStatus && (
+                                                                    <Badge
+                                                                        variant={
+                                                                            applicationStatus.status ===
+                                                                            'submitted'
+                                                                                ? 'default'
+                                                                                : 'secondary'
+                                                                        }
+                                                                        className="text-xs"
+                                                                    >
+                                                                        {applicationStatus.status ===
+                                                                        'submitted' ? (
+                                                                            <>
+                                                                                <CheckCircle className="mr-1 h-3 w-3" />
+                                                                                Applied
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <Clock className="mr-1 h-3 w-3" />
+                                                                                Draft
+                                                                            </>
+                                                                        )}
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <CardTitle className="text-lg">
+                                                            {award.name}
+                                                        </CardTitle>
+                                                        <CardDescription>
+                                                            {award.description}
+                                                        </CardDescription>
+                                                    </CardHeader>
+                                                    <CardContent>
+                                                        <div className="space-y-4">
+                                                            <div className="flex items-center justify-between text-sm">
+                                                                <span className="text-gray-600 dark:text-gray-400">
+                                                                    Category:
+                                                                </span>
+                                                                <Badge variant="outline">
+                                                                    {
+                                                                        award.category
+                                                                    }
+                                                                </Badge>
+                                                            </div>
+                                                            <div className="flex items-center justify-between text-sm">
+                                                                <span className="text-gray-600 dark:text-gray-400">
+                                                                    Deadline:
+                                                                </span>
+                                                                <span className="font-medium">
+                                                                    {formatDeadline(
+                                                                        award.submissionDeadline.toISOString(),
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                            {applicationStatus?.status ===
+                                                                'submitted' &&
+                                                                applicationStatus.submittedAt && (
+                                                                    <div className="flex items-center justify-between text-sm">
+                                                                        <span className="text-gray-600 dark:text-gray-400">
+                                                                            Applied
+                                                                            on:
+                                                                        </span>
+                                                                        <span className="font-medium text-green-600">
+                                                                            {formatDeadline(
+                                                                                applicationStatus.submittedAt.toISOString(),
+                                                                            )}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                            {applicationStatus?.status ===
+                                                            'submitted' ? (
+                                                                <Button
+                                                                    size="sm"
+                                                                    className="w-full"
+                                                                    variant="outline"
+                                                                    onClick={() =>
+                                                                        router.push(
+                                                                            `/dashboard/applications/${applicationStatus.id}`,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    View
+                                                                    Application
+                                                                </Button>
+                                                            ) : (
+                                                                <Button
+                                                                    size="sm"
+                                                                    className="w-full"
+                                                                    disabled={
+                                                                        !isOpen
+                                                                    }
+                                                                    onClick={() =>
+                                                                        router.push(
+                                                                            `/awards/apply/${award.id}`,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    {!isOpen
+                                                                        ? 'Deadline Passed'
+                                                                        : applicationStatus?.status ===
+                                                                            'draft'
+                                                                          ? 'Continue Draft'
+                                                                          : 'Apply Now'}
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="col-span-full py-12 text-center">
+                                            <Award className="mx-auto h-12 w-12 text-gray-400" />
+                                            <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">
+                                                No awards available
+                                            </h3>
+                                            <p className="mt-1 text-gray-500 dark:text-gray-400">
+                                                Check back later for new award
+                                                opportunities!
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
+
+                                {/* Pagination Controls */}
+                                {awards && awards.length > itemsPerPage && (
+                                    <div className="flex flex-col items-center justify-between space-y-3 pt-6 sm:flex-row sm:space-y-0">
+                                        <div className="flex items-center space-x-2">
+                                            <p className="text-sm text-gray-700 dark:text-gray-300">
+                                                Showing {startIndex + 1} to{' '}
+                                                {Math.min(
+                                                    endIndex,
+                                                    awards.length,
+                                                )}{' '}
+                                                of {awards.length} awards
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handlePreviousPage}
+                                                disabled={currentPage === 1}
+                                                className="hidden sm:flex"
+                                            >
+                                                <ChevronLeft className="mr-1 h-4 w-4" />
+                                                Previous
+                                            </Button>
+
+                                            {/* Mobile Previous Button */}
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handlePreviousPage}
+                                                disabled={currentPage === 1}
+                                                className="sm:hidden"
+                                            >
+                                                <ChevronLeft className="h-4 w-4" />
+                                            </Button>
+
+                                            {/* Page Numbers */}
+                                            <div className="flex items-center space-x-1">
+                                                {totalPages <= 7 ? (
+                                                    // Show all pages if 7 or fewer
+                                                    [...Array(totalPages)].map(
+                                                        (_, index) => {
+                                                            const pageNumber =
+                                                                index + 1;
+                                                            return (
+                                                                <Button
+                                                                    key={
+                                                                        pageNumber
+                                                                    }
+                                                                    variant={
+                                                                        currentPage ===
+                                                                        pageNumber
+                                                                            ? 'default'
+                                                                            : 'outline'
+                                                                    }
+                                                                    size="sm"
+                                                                    onClick={() =>
+                                                                        handlePageChange(
+                                                                            pageNumber,
+                                                                        )
+                                                                    }
+                                                                    className="h-8 w-8 p-0"
+                                                                >
+                                                                    {pageNumber}
+                                                                </Button>
+                                                            );
+                                                        },
+                                                    )
+                                                ) : (
+                                                    // Show truncated pagination for many pages
+                                                    <>
+                                                        {/* First page */}
+                                                        <Button
+                                                            variant={
+                                                                currentPage ===
+                                                                1
+                                                                    ? 'default'
+                                                                    : 'outline'
+                                                            }
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                handlePageChange(
+                                                                    1,
+                                                                )
+                                                            }
+                                                            className="h-8 w-8 p-0"
+                                                        >
+                                                            1
+                                                        </Button>
+
+                                                        {/* Left ellipsis */}
+                                                        {currentPage > 3 && (
+                                                            <span className="px-2 text-gray-500">
+                                                                ...
+                                                            </span>
+                                                        )}
+
+                                                        {/* Current page and neighbors */}
+                                                        {[...Array(3)].map(
+                                                            (_, index) => {
+                                                                const pageNumber =
+                                                                    Math.max(
+                                                                        2,
+                                                                        Math.min(
+                                                                            totalPages -
+                                                                                1,
+                                                                            currentPage -
+                                                                                1 +
+                                                                                index,
+                                                                        ),
+                                                                    );
+                                                                if (
+                                                                    pageNumber ===
+                                                                        1 ||
+                                                                    pageNumber ===
+                                                                        totalPages
+                                                                )
+                                                                    return null;
+                                                                return (
+                                                                    <Button
+                                                                        key={
+                                                                            pageNumber
+                                                                        }
+                                                                        variant={
+                                                                            currentPage ===
+                                                                            pageNumber
+                                                                                ? 'default'
+                                                                                : 'outline'
+                                                                        }
+                                                                        size="sm"
+                                                                        onClick={() =>
+                                                                            handlePageChange(
+                                                                                pageNumber,
+                                                                            )
+                                                                        }
+                                                                        className="h-8 w-8 p-0"
+                                                                    >
+                                                                        {
+                                                                            pageNumber
+                                                                        }
+                                                                    </Button>
+                                                                );
+                                                            },
+                                                        )}
+
+                                                        {/* Right ellipsis */}
+                                                        {currentPage <
+                                                            totalPages - 2 && (
+                                                            <span className="px-2 text-gray-500">
+                                                                ...
+                                                            </span>
+                                                        )}
+
+                                                        {/* Last page */}
+                                                        {totalPages > 1 && (
+                                                            <Button
+                                                                variant={
+                                                                    currentPage ===
+                                                                    totalPages
+                                                                        ? 'default'
+                                                                        : 'outline'
+                                                                }
+                                                                size="sm"
+                                                                onClick={() =>
+                                                                    handlePageChange(
+                                                                        totalPages,
+                                                                    )
+                                                                }
+                                                                className="h-8 w-8 p-0"
+                                                            >
+                                                                {totalPages}
+                                                            </Button>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </div>
+
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleNextPage}
+                                                disabled={
+                                                    currentPage === totalPages
+                                                }
+                                                className="hidden sm:flex"
+                                            >
+                                                Next
+                                                <ChevronRight className="ml-1 h-4 w-4" />
+                                            </Button>
+
+                                            {/* Mobile Next Button */}
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleNextPage}
+                                                disabled={
+                                                    currentPage === totalPages
+                                                }
+                                                className="sm:hidden"
+                                            >
+                                                <ChevronRight className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -533,45 +864,128 @@ export default function DashboardPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    <div className="flex items-center justify-between rounded-lg border p-4">
-                                        <div>
-                                            <h4 className="font-medium">
-                                                Best Teacher Award
-                                            </h4>
-                                            <p className="text-sm text-gray-600">
-                                                Submitted on Dec 15, 2024
+                                    {myApplications &&
+                                    myApplications.length > 0 ? (
+                                        myApplications.map((application) => (
+                                            <div
+                                                key={application.id}
+                                                className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                                            >
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-3">
+                                                        <Award className="h-5 w-5 text-yellow-500" />
+                                                        <div>
+                                                            <h4 className="font-medium text-gray-900 dark:text-white">
+                                                                {
+                                                                    application.awardName
+                                                                }
+                                                            </h4>
+                                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                                {application.status ===
+                                                                    'submitted' &&
+                                                                application.submittedAt
+                                                                    ? `Submitted on ${formatDeadline(application.submittedAt.toISOString())}`
+                                                                    : application.status ===
+                                                                        'draft'
+                                                                      ? `Draft saved on ${formatDeadline(application.updatedAt.toISOString())}`
+                                                                      : `Updated on ${formatDeadline(application.updatedAt.toISOString())}`}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-2 flex items-center gap-2">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="text-xs"
+                                                        >
+                                                            {
+                                                                application.awardCategory
+                                                            }
+                                                        </Badge>
+                                                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                                                            Deadline:{' '}
+                                                            {formatDeadline(
+                                                                application.submissionDeadline.toISOString(),
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <Badge
+                                                        variant={
+                                                            application.status ===
+                                                            'submitted'
+                                                                ? 'default'
+                                                                : 'secondary'
+                                                        }
+                                                        className={
+                                                            application.status ===
+                                                            'submitted'
+                                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                                                : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                                                        }
+                                                    >
+                                                        {application.status ===
+                                                        'submitted' ? (
+                                                            <>
+                                                                <CheckCircle className="mr-1 h-3 w-3" />
+                                                                Submitted
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Clock className="mr-1 h-3 w-3" />
+                                                                Draft
+                                                            </>
+                                                        )}
+                                                    </Badge>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() =>
+                                                            application.status ===
+                                                            'submitted'
+                                                                ? router.push(
+                                                                      `/dashboard/applications/${application.id}`,
+                                                                  )
+                                                                : router.push(
+                                                                      `/awards/apply/${application.awardId}`,
+                                                                  )
+                                                        }
+                                                    >
+                                                        {application.status ===
+                                                        'submitted' ? (
+                                                            <>
+                                                                <FileText className="mr-1 h-3 w-3" />
+                                                                View
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Settings className="mr-1 h-3 w-3" />
+                                                                Continue
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="py-12 text-center">
+                                            <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                                            <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">
+                                                No applications yet
+                                            </h3>
+                                            <p className="mt-1 text-gray-500 dark:text-gray-400">
+                                                Start by applying for an award!
                                             </p>
+                                            <Button
+                                                className="mt-4"
+                                                onClick={() =>
+                                                    router.push('/awards')
+                                                }
+                                            >
+                                                Browse Awards
+                                            </Button>
                                         </div>
-                                        <Badge className="bg-blue-100 text-blue-800">
-                                            Under Review
-                                        </Badge>
-                                    </div>
-                                    <div className="flex items-center justify-between rounded-lg border p-4">
-                                        <div>
-                                            <h4 className="font-medium">
-                                                Research Innovation
-                                            </h4>
-                                            <p className="text-sm text-gray-600">
-                                                Submitted on Dec 10, 2024
-                                            </p>
-                                        </div>
-                                        <Badge className="bg-yellow-100 text-yellow-800">
-                                            Shortlisted
-                                        </Badge>
-                                    </div>
-                                    <div className="flex items-center justify-between rounded-lg border p-4">
-                                        <div>
-                                            <h4 className="font-medium">
-                                                Student Excellence
-                                            </h4>
-                                            <p className="text-sm text-gray-600">
-                                                Submitted on Nov 20, 2024
-                                            </p>
-                                        </div>
-                                        <Badge className="bg-green-100 text-green-800">
-                                            Awarded
-                                        </Badge>
-                                    </div>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
