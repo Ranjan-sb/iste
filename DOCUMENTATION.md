@@ -857,7 +857,26 @@ export const auth = betterAuth({
 
 ### Implementing Role-Based Access Control
 
-Leverage better-auth's admin plugin for role-based access:
+The application implements a **dual role system** for comprehensive access control and user management:
+
+#### 1. Authentication Level Role (`users.role`)
+
+This is the primary authorization mechanism provided by better-auth:
+
+```typescript
+// In auth-schema.ts
+users: {
+    role: text('role').notNull().default('user');
+}
+```
+
+**Purpose**: Basic authentication and admin access control
+**Values**: Simple strings like `'user'`, `'admin'`, `'moderator'`
+**Used for**:
+
+- Quick permission checks
+- Better-auth admin plugin integration
+- Basic route protection
 
 ```typescript
 // Check user role in a protected route
@@ -874,6 +893,106 @@ const protectedRouter = router({
     }),
 });
 ```
+
+#### 2. Application Level Role (`roles` table + `user_profiles.roleId`)
+
+This provides detailed role management for the application domain:
+
+```typescript
+// In schema.ts
+export const roles = pgTable('roles', {
+    id: serial('id').primaryKey(),
+    name: text('name').notNull(),
+    description: text('description'),
+    // ... other role metadata
+});
+
+export const userProfiles = pgTable('user_profiles', {
+    // ... other fields
+    roleId: integer('role_id').references(() => roles.id),
+});
+```
+
+**Purpose**: Application-specific functionality and UI customization
+**Values**: Database records like `{ id: 1, name: 'student', description: 'Undergraduate student' }`
+**Used for**:
+
+- Dynamic form fields based on role
+- Role-specific dashboard features
+- Custom application workflows
+- Detailed user categorization
+
+#### How They Work Together
+
+```typescript
+// Example: User with dual roles
+const user = {
+    // Auth-level role (for security)
+    role: 'user',
+
+    // Application-level role (for features)
+    profile: {
+        roleId: 2, // References roles table
+        roleName: 'faculty'
+    }
+};
+
+// Security check uses auth role
+if (user.role !== 'admin') {
+    throw new Error('Unauthorized');
+}
+
+// Feature logic uses application role
+if (user.profile.roleName === 'faculty') {
+    // Show faculty-specific dashboard
+    return <FacultyDashboard />;
+}
+```
+
+#### Benefits of This Architecture
+
+1. **Separation of Concerns**: Security vs. application logic
+2. **Scalability**: Easy to add new application roles without affecting auth
+3. **Flexibility**: Application roles can have rich metadata
+4. **Maintainability**: Changes to application roles don't affect security
+5. **Better User Experience**: Detailed role-based customization
+
+#### Example Implementation
+
+```typescript
+// tRPC procedure using both role systems
+export const profileRouter = router({
+    getProfile: publicProcedure.query(async ({ ctx }) => {
+        const session = await getUserSession();
+
+        // Security check (auth role)
+        if (!session?.user) {
+            throw new Error('Unauthorized');
+        }
+
+        // Get application role for customization
+        const profile = await db.query.userProfiles.findFirst({
+            where: eq(userProfiles.userId, session.user.id),
+            with: {
+                role: true, // Include role details
+            },
+        });
+
+        // Customize response based on application role
+        if (profile?.role.name === 'student') {
+            return {
+                ...profile,
+                availableFields: getStudentFields(),
+                dashboardType: 'student',
+            };
+        }
+
+        return profile;
+    }),
+});
+```
+
+This dual role system provides the flexibility needed for educational platforms while maintaining strong security boundaries.
 
 ### Adding Background Jobs
 
