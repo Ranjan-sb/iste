@@ -136,6 +136,41 @@ export const authClient = createAuthClient({
 export const { signIn, signOut, signUp, useSession } = authClient;
 ```
 
+#### Dual Role System
+
+The application implements a **dual role system** for comprehensive access control:
+
+1. **Authentication Level Role** (`users.role`): Basic authorization for security (e.g., `'user'`, `'admin'`)
+2. **Application Level Role** (`roles` table + `user_profiles.roleId`): Detailed role management for features (e.g., `'student'`, `'faculty'`, `'alumni'`)
+
+```ts
+// Example: User with dual roles
+const user = {
+    role: 'user',           // Auth-level (security)
+    profile: {
+        roleId: 2,          // Application-level (features)
+        roleName: 'faculty'
+    }
+};
+
+// Security check uses auth role
+if (user.role !== 'admin') throw new Error('Unauthorized');
+
+// Feature logic uses application role
+if (user.profile.roleName === 'faculty') {
+    return <FacultyDashboard />;
+}
+```
+
+**Benefits:**
+
+- **Separation of Concerns**: Security vs. application logic
+- **Scalability**: Easy to add new application roles without affecting auth
+- **Flexibility**: Application roles can have rich metadata and custom fields
+- **Better UX**: Detailed role-based customization
+
+> See `DOCUMENTATION.md` for detailed implementation examples.
+
 ### Modern Styling with Tailwind CSS v4
 
 Latest version of Tailwind CSS offering:
