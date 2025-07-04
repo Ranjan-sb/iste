@@ -11,15 +11,24 @@ import { getServerEnv } from './env';
 
 const env = getServerEnv();
 
-// Initialize S3 client for Cloudflare R2
-const s3Client = new S3Client({
-    region: 'auto',
-    endpoint: env.R2_ENDPOINT || 'https://r2.cloudflarestorage.com',
-    credentials: {
-        accessKeyId: env.R2_ACCESS_KEY_ID,
-        secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-    },
-});
+// Check if R2 is configured
+const isR2Configured = !!(
+    env.R2_ACCESS_KEY_ID &&
+    env.R2_SECRET_ACCESS_KEY &&
+    env.R2_BUCKET_NAME
+);
+
+// Initialize S3 client for Cloudflare R2 only if configured
+const s3Client = isR2Configured
+    ? new S3Client({
+          region: 'auto',
+          endpoint: env.R2_ENDPOINT || 'https://r2.cloudflarestorage.com',
+          credentials: {
+              accessKeyId: env.R2_ACCESS_KEY_ID!,
+              secretAccessKey: env.R2_SECRET_ACCESS_KEY!,
+          },
+      })
+    : null;
 
 export interface FileUploadResult {
     key: string;
@@ -50,12 +59,18 @@ export async function uploadFile(
         fieldId?: string;
     },
 ): Promise<FileUploadResult> {
+    if (!isR2Configured || !s3Client) {
+        throw new Error(
+            'File storage is not configured. Please set up R2 environment variables.',
+        );
+    }
+
     // Generate unique key for the file
     const fileExtension = filename.split('.').pop() || '';
     const key = `uploads/${options.uploadedBy}/${randomUUID()}.${fileExtension}`;
 
     const command = new PutObjectCommand({
-        Bucket: env.R2_BUCKET_NAME,
+        Bucket: env.R2_BUCKET_NAME!,
         Key: key,
         Body: file,
         ContentType: mimetype,
@@ -91,8 +106,14 @@ export async function getFileDownloadUrl(
     key: string,
     expiresIn: number = 3600,
 ): Promise<string> {
+    if (!isR2Configured || !s3Client) {
+        throw new Error(
+            'File storage is not configured. Please set up R2 environment variables.',
+        );
+    }
+
     const command = new GetObjectCommand({
-        Bucket: env.R2_BUCKET_NAME,
+        Bucket: env.R2_BUCKET_NAME!,
         Key: key,
     });
 
@@ -103,8 +124,14 @@ export async function getFileDownloadUrl(
  * Delete a file from R2
  */
 export async function deleteFile(key: string): Promise<void> {
+    if (!isR2Configured || !s3Client) {
+        throw new Error(
+            'File storage is not configured. Please set up R2 environment variables.',
+        );
+    }
+
     const command = new DeleteObjectCommand({
-        Bucket: env.R2_BUCKET_NAME,
+        Bucket: env.R2_BUCKET_NAME!,
         Key: key,
     });
 
@@ -115,9 +142,13 @@ export async function deleteFile(key: string): Promise<void> {
  * Check if a file exists in R2
  */
 export async function fileExists(key: string): Promise<boolean> {
+    if (!isR2Configured || !s3Client) {
+        return false;
+    }
+
     try {
         const command = new HeadObjectCommand({
-            Bucket: env.R2_BUCKET_NAME,
+            Bucket: env.R2_BUCKET_NAME!,
             Key: key,
         });
 
@@ -137,9 +168,13 @@ export async function getFileMetadata(key: string): Promise<{
     lastModified: Date;
     metadata: Record<string, string>;
 } | null> {
+    if (!isR2Configured || !s3Client) {
+        return null;
+    }
+
     try {
         const command = new HeadObjectCommand({
-            Bucket: env.R2_BUCKET_NAME,
+            Bucket: env.R2_BUCKET_NAME!,
             Key: key,
         });
 
@@ -192,4 +227,11 @@ export function validateFile(
     }
 
     return { valid: true };
+}
+
+/**
+ * Check if file storage is properly configured
+ */
+export function isFileStorageConfigured(): boolean {
+    return isR2Configured;
 }
