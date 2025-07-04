@@ -47,6 +47,19 @@ For development, emails are logged to the console. For production, you can confi
 RESEND_API_KEY="re_your_resend_api_key_here"
 ```
 
+### Cloudflare R2 Storage Configuration (Required)
+
+For file uploads, you need to configure Cloudflare R2 storage:
+
+```bash
+# Cloudflare R2 Storage - Required for file uploads
+R2_ACCOUNT_ID="your_cloudflare_account_id"
+R2_ACCESS_KEY_ID="your_r2_access_key_id"
+R2_SECRET_ACCESS_KEY="your_r2_secret_access_key"
+R2_BUCKET_NAME="your_r2_bucket_name"
+R2_PUBLIC_URL="https://your-custom-domain.com"  # Optional: Custom domain for public access
+```
+
 ## Complete Example `.env` File
 
 ```bash
@@ -61,6 +74,13 @@ NODE_ENV="development"
 
 # Email Configuration (Optional for development)
 # RESEND_API_KEY="re_your_resend_api_key_here"
+
+# Cloudflare R2 Storage (Required)
+R2_ACCOUNT_ID="your_cloudflare_account_id"
+R2_ACCESS_KEY_ID="your_r2_access_key_id"
+R2_SECRET_ACCESS_KEY="your_r2_secret_access_key"
+R2_BUCKET_NAME="your_r2_bucket_name"
+# R2_PUBLIC_URL="https://your-custom-domain.com"  # Optional
 ```
 
 ## Setup Steps
@@ -88,7 +108,36 @@ For production:
 
 2. **Add the API key** to your `.env` file
 
-### 3. Run Database Migrations
+### 3. Cloudflare R2 Setup (Required for File Uploads)
+
+1. **Create a Cloudflare Account**:
+
+    - Go to [cloudflare.com](https://cloudflare.com) and create an account if you don't have one
+
+2. **Create an R2 Bucket**:
+
+    - Navigate to R2 Object Storage in your Cloudflare dashboard
+    - Click "Create bucket"
+    - Choose a unique bucket name (e.g., `iste-platform-files`)
+    - Select a location close to your users
+
+3. **Generate R2 API Tokens**:
+
+    - Go to "Manage R2 API tokens" in the R2 dashboard
+    - Click "Create API token"
+    - Give it a name (e.g., "ISTE Platform")
+    - Set permissions to "Object Read & Write" for your bucket
+    - Copy the Access Key ID and Secret Access Key
+
+4. **Get Your Account ID**:
+
+    - Find your Account ID in the right sidebar of your Cloudflare dashboard
+
+5. **Optional: Set up Custom Domain**:
+    - If you want to serve files from your own domain, configure a custom domain in R2 settings
+    - Add the custom domain URL to `R2_PUBLIC_URL` in your `.env` file
+
+### 4. Run Database Migrations
 
 After setting up your environment variables:
 
@@ -97,6 +146,13 @@ After setting up your environment variables:
 pnpm db:generate
 pnpm db:push
 ```
+
+### 3. Cloudflare R2 Setup
+
+1. Create a Cloudflare account and R2 bucket
+2. Generate R2 API tokens with Object Read & Write permissions
+3. Get your Account ID from the Cloudflare dashboard
+4. Add the credentials to your `.env` file
 
 ### 4. Start the Development Server
 

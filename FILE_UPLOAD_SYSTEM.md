@@ -12,7 +12,9 @@ The ISTE platform now includes a complete file upload and download system for aw
 
 - `id` - Primary key
 - `filename` - Original filename
-- `storedFilename` - Unique filename on disk (UUID-based)
+- `r2Key` - Unique key in R2 storage (UUID-based)
+- `r2Url` - R2 storage URL
+- `publicUrl` - Public URL if custom domain is configured
 - `mimetype` - File MIME type
 - `size` - File size in bytes
 - `uploadedBy` - User who uploaded the file
@@ -22,9 +24,10 @@ The ISTE platform now includes a complete file upload and download system for aw
 
 ### 2. File Storage
 
-- Files are stored in the `/uploads` directory (excluded from git)
-- Each file gets a unique UUID-based filename to prevent conflicts
+- Files are stored in Cloudflare R2 object storage
+- Each file gets a unique key with UUID-based naming to prevent conflicts
 - Original filenames are preserved in the database
+- Files are accessible via signed URLs for secure downloads
 
 ### 3. API Endpoints
 
@@ -32,13 +35,14 @@ The ISTE platform now includes a complete file upload and download system for aw
 
 - POST endpoint for file uploads
 - Validates file size (10MB max) and type (PDF, DOC, DOCX)
-- Stores file to disk and metadata to database
+- Uploads file to Cloudflare R2 and stores metadata to database
 - Returns file metadata
 
 **Download: `/api/files/[fileId]`**
 
 - GET endpoint for file downloads
-- Serves files with proper headers for download
+- Generates signed URLs for secure downloads from R2
+- Redirects to signed URL with 1-hour expiry
 - Currently allows any authenticated user to download (can be restricted later)
 
 ### 4. Frontend Components
@@ -75,7 +79,9 @@ The ISTE platform now includes a complete file upload and download system for aw
 - File type validation (only PDF, DOC, DOCX allowed)
 - File size limits (10MB maximum)
 - Users can only access files they uploaded or from their applications
-- Files stored outside web root for security
+- Files stored in secure cloud storage (Cloudflare R2)
+- Download access via time-limited signed URLs (1-hour expiry)
+- Unique storage keys prevent direct access without authorization
 
 ## File Types Supported
 
@@ -90,12 +96,13 @@ The ISTE platform now includes a complete file upload and download system for aw
 
 ## Future Enhancements
 
-1. **Cloud Storage**: Move to AWS S3 or similar for scalability
-2. **Access Control**: More granular permissions (admin access, evaluator access)
-3. **File Versioning**: Track file changes and versions
-4. **Virus Scanning**: Add malware detection
-5. **Thumbnails**: Generate previews for documents
-6. **Bulk Download**: Download all files from an application as ZIP
+1. **Access Control**: More granular permissions (admin access, evaluator access)
+2. **File Versioning**: Track file changes and versions
+3. **Virus Scanning**: Add malware detection
+4. **Thumbnails**: Generate previews for documents
+5. **Bulk Download**: Download all files from an application as ZIP
+6. **CDN Integration**: Use Cloudflare CDN for faster global file delivery
+7. **File Compression**: Automatic compression for large documents
 
 ## Testing
 

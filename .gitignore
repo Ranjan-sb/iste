@@ -41,5 +41,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# uploaded files
-/uploads
+# uploaded files (legacy - now using Cloudflare R2)
+# /uploads
+
+# PDF.js worker (generated file)
+/public/pdf.worker.min.mjs
