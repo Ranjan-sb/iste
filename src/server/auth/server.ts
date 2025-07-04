@@ -24,6 +24,7 @@ export const auth = betterAuth({
         process.env.NEXT_PUBLIC_APP_URL!,
         'http://localhost:3000',
         'https://iste-jeevnaa.vercel.app',
+        'https://iste-jeevna.vercel.app',
     ],
     plugins: [
         nextCookies(),
