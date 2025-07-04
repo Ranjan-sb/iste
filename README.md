@@ -207,6 +207,33 @@ This project uses a T3-style environment variable validation system powered by [
 - **Separation:** Server-only and client-exposed (NEXT*PUBLIC*\*) variables are validated separately.
 - **Usage:** Import and use the `env` object from `@/lib/env` for type-safe, validated access to your environment variables.
 
+### Required Environment Variables
+
+Create a `.env` file in the root directory with these variables:
+
+```bash
+# Database Configuration
+DATABASE_URL="postgresql://username:password@localhost:5432/iste_db"
+
+# App Configuration
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# Node Environment
+NODE_ENV="development"
+
+# Cloudflare R2 Storage Configuration (Required for file uploads)
+R2_ACCOUNT_ID="your_cloudflare_account_id"
+R2_ACCESS_KEY_ID="your_r2_access_key_id"
+R2_SECRET_ACCESS_KEY="your_r2_secret_access_key"
+R2_BUCKET_NAME="your_r2_bucket_name"
+
+# Optional configurations
+# RESEND_API_KEY="re_your_resend_api_key_here"  # For email functionality
+# R2_PUBLIC_URL="https://your-custom-domain.com"  # Custom domain for R2
+```
+
+See `CLOUDFLARE_R2_SETUP.md` for detailed setup instructions.
+
 ### Adding Environment Variables
 
 1. **Server Variables:**

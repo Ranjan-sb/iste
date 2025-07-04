@@ -329,7 +329,7 @@ const AwardsPage = () => {
                 </div>
 
                 {/* Call to Action */}
-                <div className="mt-12 rounded-lg bg-blue-600 p-8 text-center text-white">
+                {/* <div className="mt-12 rounded-lg bg-blue-600 p-8 text-center text-white">
                     <h3 className="text-2xl font-bold">Ready to Apply?</h3>
                     <p className="mt-2 text-blue-100">
                         Start your award application journey with our
@@ -341,7 +341,7 @@ const AwardsPage = () => {
                             Create New Application
                         </Button>
                     </Link>
-                </div>
+                </div> */}
             </div>
         </div>
     );

@@ -24,6 +24,8 @@ import {
     User,
     Edit,
     X,
+    Download,
+    Eye,
 } from 'lucide-react';
 import { trpc } from '@/providers/trpc-provider';
 import { formatDeadline } from '@/lib/date-utils';
@@ -33,6 +35,7 @@ import {
     getFormDataProperty,
 } from '@/types/application-types';
 import Link from 'next/link';
+import PDFPreview from '@/components/pdf-preview';
 
 const ApplicationDetailPage = () => {
     const params = useParams();
@@ -159,57 +162,80 @@ const ApplicationDetailPage = () => {
                                             <span className="text-blue-600">
                                                 {value.filename}
                                             </span>
-                                            <button
-                                                onClick={async () => {
-                                                    try {
-                                                        const response =
-                                                            await fetch(
-                                                                `/api/files/${value.id}`,
-                                                            );
-                                                        if (!response.ok)
-                                                            throw new Error(
-                                                                'Download failed',
-                                                            );
+                                            <div className="flex items-center gap-2">
+                                                {value.filename
+                                                    ?.toLowerCase()
+                                                    .endsWith('.pdf') ? (
+                                                    <PDFPreview
+                                                        fileId={value.id}
+                                                        filename={
+                                                            value.filename
+                                                        }
+                                                        triggerButton={
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                            >
+                                                                <Eye className="mr-2 h-4 w-4" />
+                                                                Preview
+                                                            </Button>
+                                                        }
+                                                    />
+                                                ) : null}
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={async () => {
+                                                        try {
+                                                            const response =
+                                                                await fetch(
+                                                                    `/api/files/${value.id}`,
+                                                                );
+                                                            if (!response.ok)
+                                                                throw new Error(
+                                                                    'Download failed',
+                                                                );
 
-                                                        const blob =
-                                                            await response.blob();
-                                                        const url =
-                                                            URL.createObjectURL(
-                                                                blob,
+                                                            const blob =
+                                                                await response.blob();
+                                                            const url =
+                                                                URL.createObjectURL(
+                                                                    blob,
+                                                                );
+                                                            const a =
+                                                                document.createElement(
+                                                                    'a',
+                                                                );
+                                                            a.href = url;
+                                                            a.download =
+                                                                value.filename;
+                                                            document.body.appendChild(
+                                                                a,
                                                             );
-                                                        const a =
-                                                            document.createElement(
-                                                                'a',
+                                                            a.click();
+                                                            document.body.removeChild(
+                                                                a,
                                                             );
-                                                        a.href = url;
-                                                        a.download =
-                                                            value.filename;
-                                                        document.body.appendChild(
-                                                            a,
-                                                        );
-                                                        a.click();
-                                                        document.body.removeChild(
-                                                            a,
-                                                        );
-                                                        URL.revokeObjectURL(
-                                                            url,
-                                                        );
-                                                    } catch (error) {
-                                                        console.error(
-                                                            'Download error:',
-                                                            error,
-                                                        );
-                                                        addAlert(
-                                                            'error',
-                                                            'Download Failed',
-                                                            'Failed to download file.',
-                                                        );
-                                                    }
-                                                }}
-                                                className="text-sm text-blue-600 underline hover:text-blue-800"
-                                            >
-                                                Download
-                                            </button>
+                                                            URL.revokeObjectURL(
+                                                                url,
+                                                            );
+                                                        } catch (error) {
+                                                            console.error(
+                                                                'Download error:',
+                                                                error,
+                                                            );
+                                                            addAlert(
+                                                                'error',
+                                                                'Download Failed',
+                                                                'Failed to download file.',
+                                                            );
+                                                        }
+                                                    }}
+                                                >
+                                                    <Download className="mr-2 h-4 w-4" />
+                                                    Download
+                                                </Button>
+                                            </div>
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-2 text-gray-500">
@@ -743,55 +769,86 @@ const ApplicationDetailPage = () => {
                                                                         .filename
                                                                 }
                                                             </span>
-                                                            <button
-                                                                onClick={async () => {
-                                                                    try {
-                                                                        const response =
-                                                                            await fetch(
-                                                                                `/api/files/${project.briefResumeFile.id}`,
+                                                            <div className="flex items-center gap-2">
+                                                                {project.briefResumeFile.filename
+                                                                    ?.toLowerCase()
+                                                                    .endsWith(
+                                                                        '.pdf',
+                                                                    ) ? (
+                                                                    <PDFPreview
+                                                                        fileId={
+                                                                            project
+                                                                                .briefResumeFile
+                                                                                .id
+                                                                        }
+                                                                        filename={
+                                                                            project
+                                                                                .briefResumeFile
+                                                                                .filename
+                                                                        }
+                                                                        triggerButton={
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                size="sm"
+                                                                            >
+                                                                                <Eye className="mr-2 h-4 w-4" />
+                                                                                Preview
+                                                                            </Button>
+                                                                        }
+                                                                    />
+                                                                ) : null}
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            const response =
+                                                                                await fetch(
+                                                                                    `/api/files/${project.briefResumeFile.id}`,
+                                                                                );
+                                                                            if (
+                                                                                !response.ok
+                                                                            )
+                                                                                throw new Error(
+                                                                                    'Download failed',
+                                                                                );
+                                                                            const blob =
+                                                                                await response.blob();
+                                                                            const url =
+                                                                                URL.createObjectURL(
+                                                                                    blob,
+                                                                                );
+                                                                            const a =
+                                                                                document.createElement(
+                                                                                    'a',
+                                                                                );
+                                                                            a.href =
+                                                                                url;
+                                                                            a.download =
+                                                                                project.briefResumeFile.filename;
+                                                                            document.body.appendChild(
+                                                                                a,
                                                                             );
-                                                                        if (
-                                                                            !response.ok
-                                                                        )
-                                                                            throw new Error(
-                                                                                'Download failed',
+                                                                            a.click();
+                                                                            document.body.removeChild(
+                                                                                a,
                                                                             );
-                                                                        const blob =
-                                                                            await response.blob();
-                                                                        const url =
-                                                                            URL.createObjectURL(
-                                                                                blob,
+                                                                            URL.revokeObjectURL(
+                                                                                url,
                                                                             );
-                                                                        const a =
-                                                                            document.createElement(
-                                                                                'a',
+                                                                        } catch (error) {
+                                                                            addAlert(
+                                                                                'error',
+                                                                                'Download Failed',
+                                                                                'Failed to download file.',
                                                                             );
-                                                                        a.href =
-                                                                            url;
-                                                                        a.download =
-                                                                            project.briefResumeFile.filename;
-                                                                        document.body.appendChild(
-                                                                            a,
-                                                                        );
-                                                                        a.click();
-                                                                        document.body.removeChild(
-                                                                            a,
-                                                                        );
-                                                                        URL.revokeObjectURL(
-                                                                            url,
-                                                                        );
-                                                                    } catch (error) {
-                                                                        addAlert(
-                                                                            'error',
-                                                                            'Download Failed',
-                                                                            'Failed to download file.',
-                                                                        );
-                                                                    }
-                                                                }}
-                                                                className="text-sm text-blue-600 underline hover:text-blue-800"
-                                                            >
-                                                                Download
-                                                            </button>
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <Download className="mr-2 h-4 w-4" />
+                                                                    Download
+                                                                </Button>
+                                                            </div>
                                                         </div>
                                                     )}
                                                     {!project.briefResume &&
@@ -817,55 +874,86 @@ const ApplicationDetailPage = () => {
                                                                         .filename
                                                                 }
                                                             </span>
-                                                            <button
-                                                                onClick={async () => {
-                                                                    try {
-                                                                        const response =
-                                                                            await fetch(
-                                                                                `/api/files/${project.institutionRemarks.id}`,
+                                                            <div className="flex items-center gap-2">
+                                                                {project.institutionRemarks.filename
+                                                                    ?.toLowerCase()
+                                                                    .endsWith(
+                                                                        '.pdf',
+                                                                    ) ? (
+                                                                    <PDFPreview
+                                                                        fileId={
+                                                                            project
+                                                                                .institutionRemarks
+                                                                                .id
+                                                                        }
+                                                                        filename={
+                                                                            project
+                                                                                .institutionRemarks
+                                                                                .filename
+                                                                        }
+                                                                        triggerButton={
+                                                                            <Button
+                                                                                variant="outline"
+                                                                                size="sm"
+                                                                            >
+                                                                                <Eye className="mr-2 h-4 w-4" />
+                                                                                Preview
+                                                                            </Button>
+                                                                        }
+                                                                    />
+                                                                ) : null}
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            const response =
+                                                                                await fetch(
+                                                                                    `/api/files/${project.institutionRemarks.id}`,
+                                                                                );
+                                                                            if (
+                                                                                !response.ok
+                                                                            )
+                                                                                throw new Error(
+                                                                                    'Download failed',
+                                                                                );
+                                                                            const blob =
+                                                                                await response.blob();
+                                                                            const url =
+                                                                                URL.createObjectURL(
+                                                                                    blob,
+                                                                                );
+                                                                            const a =
+                                                                                document.createElement(
+                                                                                    'a',
+                                                                                );
+                                                                            a.href =
+                                                                                url;
+                                                                            a.download =
+                                                                                project.institutionRemarks.filename;
+                                                                            document.body.appendChild(
+                                                                                a,
                                                                             );
-                                                                        if (
-                                                                            !response.ok
-                                                                        )
-                                                                            throw new Error(
-                                                                                'Download failed',
+                                                                            a.click();
+                                                                            document.body.removeChild(
+                                                                                a,
                                                                             );
-                                                                        const blob =
-                                                                            await response.blob();
-                                                                        const url =
-                                                                            URL.createObjectURL(
-                                                                                blob,
+                                                                            URL.revokeObjectURL(
+                                                                                url,
                                                                             );
-                                                                        const a =
-                                                                            document.createElement(
-                                                                                'a',
+                                                                        } catch (error) {
+                                                                            addAlert(
+                                                                                'error',
+                                                                                'Download Failed',
+                                                                                'Failed to download file.',
                                                                             );
-                                                                        a.href =
-                                                                            url;
-                                                                        a.download =
-                                                                            project.institutionRemarks.filename;
-                                                                        document.body.appendChild(
-                                                                            a,
-                                                                        );
-                                                                        a.click();
-                                                                        document.body.removeChild(
-                                                                            a,
-                                                                        );
-                                                                        URL.revokeObjectURL(
-                                                                            url,
-                                                                        );
-                                                                    } catch (error) {
-                                                                        addAlert(
-                                                                            'error',
-                                                                            'Download Failed',
-                                                                            'Failed to download file.',
-                                                                        );
-                                                                    }
-                                                                }}
-                                                                className="text-sm text-green-600 underline hover:text-green-800"
-                                                            >
-                                                                Download
-                                                            </button>
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <Download className="mr-2 h-4 w-4" />
+                                                                    Download
+                                                                </Button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 )}
