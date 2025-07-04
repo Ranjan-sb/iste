@@ -18,6 +18,13 @@ export const auth = betterAuth({
         provider: 'pg',
         usePlural: true,
     }),
+    secret: process.env.BETTER_AUTH_SECRET,
+    baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL,
+    trustedOrigins: [
+        process.env.NEXT_PUBLIC_APP_URL!,
+        'http://localhost:3000',
+        'https://iste-jeevna.vercel.app',
+    ],
     plugins: [
         nextCookies(),
         admin({
@@ -51,6 +58,15 @@ export const auth = betterAuth({
         cookieCache: {
             enabled: true,
             maxAge: 5 * 60,
+        },
+        cookieOptions: {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            domain:
+                process.env.NODE_ENV === 'production'
+                    ? '.vercel.app'
+                    : undefined,
         },
     },
 });
